@@ -1,1 +1,0 @@
-*Facet listing is chosen.

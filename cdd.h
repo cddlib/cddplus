@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.72, April 16, 1995 
+   Version 0.72a, April 25, 1995 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,7 +11,7 @@
 */
 
 #define COPYRIGHT   "Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.72 (April 16, 1995)"
+#define DDVERSION   "Version 0.72a (April 25, 1995)"
 
 #ifdef RATIONAL
 #define ARITHMETIC  "Compiled for Rational Exact Arithmetic"

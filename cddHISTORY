@@ -1,5 +1,6 @@
 cdd & cdd+ HISTORY file
 
+
 *** cdd version (date) / changes ***
 
 Version C0.21 (November 10, 1993) /
@@ -201,6 +202,7 @@ ccd+ Version 0.70 (April 3, 1995) /
    identical to cdd-055.  This version requires GNU gcc compilers
    (2.6.0 or higher) and a compatible g++lib.
 
+
 ccd+ Version 0.71 (April 15, 1995) /
    Two new functions (through options) are added.  The option 
    "facet_listing" checks whether each input inequality determines
@@ -219,7 +221,9 @@ ccd+ Version 0.72 (April 16, 1995) /
    adjacency and incidence files from both *.ine and *.ext
    files.  Thus it is not necessary to generate *.adj and *.icd
    files together with *.ext file. 
-   Also, the broken "maxcutoff" and "mincutoff" options of cddr+
-   in Version 0.70 and 0.71 are fixed.
-  
+
+ccd+ Version 0.72a (April 16, 1995) /
+   Cycling bug of Version 072 of LP maximize and minimize has been 
+   fixed.
+
 --- end of file: cddHISTORY ---

@@ -688,30 +688,26 @@ void LPMain(ostream &f, ostream &f_log)
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
-  Bmatrix BasisInv;
 
   time(&starttime);
   LPsol = new myTYPE[nn];
-  LPdsol = new myTYPE[nn];
-  InitializeBmatrix(BasisInv); 
+  LPdsol = new myTYPE[nn]; 
   if (Inequality==ZeroRHS){
     printf("Sorry, LP optimization is not implemented for RHS==0.\n");
     goto _L99;
   }
   if (Conversion==LPmax){
-    CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+    CrissCrossMaximize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
       &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   }
   else if (Conversion==LPmin){
-    CrissCrossMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+    CrissCrossMinimize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
       &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   }
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
 _L99:;
-  delete[] LPsol;  delete[] LPdsol; 
-  free_Bmatrix(BasisInv);
 }
 
 void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
@@ -724,7 +720,6 @@ void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
-  Bmatrix BasisInv;
 
   *found = False;
   if (Inequality==ZeroRHS){
@@ -732,19 +727,16 @@ void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
     goto _L99;
   }
   EnlargeAAforInteriorFinding();
-  InitializeBmatrix(BasisInv);
   time(&starttime);
   OBJrow=mm; RHScol=1;
-  CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+  CrissCrossMaximize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (LPStatus==Optimal || LPStatus==DualInconsistent) *found=True;
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
-  free_Bmatrix(BasisInv);
   RecoverAAafterInteriorFinding();
 _L99:;
-  delete[] LPsol;  delete[] LPdsol;
 }
 
 

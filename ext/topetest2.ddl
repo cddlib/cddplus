@@ -1,1 +1,0 @@
-*Tope listing is chosen.

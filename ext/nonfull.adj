@@ -1,9 +1,0 @@
-*Adjacency List of output (=vertices/rays)
-*cdd input file : nonfull.ine (6 x 4)
-*cdd output file: nonfull.ext
-begin
-  3
- 1 2 : 2 3
- 2 2 : 1 3
- 3 2 : 1 2
-end

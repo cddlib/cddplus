@@ -8,10 +8,12 @@ LIBDIR = /usr/local/lib
 
 # Location of g++-library include files
 INCLUDEDIR = /usr/local/lib/g++-include
+#INCLUDEDIR = /usr/local/include/g++
 
 # Compiler options
 #CFLAGS = -g -O -I$(INCLUDEDIR)
 CFLAGS = -O -I$(INCLUDEDIR)
+#CFLAGS = -g -I$(INCLUDEDIR)
 
 ########## You shouldn't have to change anything after this point ##########
 

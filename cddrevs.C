@@ -163,32 +163,22 @@ void ReverseSearch(ostream &wf, topeOBJECT s, long delta)
 boolean Facet_Q(topeOBJECT tope, rowrange ii)
 {
   colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
-  static Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0, tempRHS=0;  /* LP optimum value */
   long LPiter,testi, i, j;
   boolean answer=True;
-  static colrange nlast=0;
-  static Bmatrix BInv;
 
-  if (nlast!=nn){
-    if (nlast>0){
-      delete[] LPsol; 
-      delete[] LPdsol;
-      free_Bmatrix(BInv);
-    }
-    InitializeBmatrix(BInv);
-    LPsol = new myTYPE[nn];
-    LPdsol = new myTYPE[nn];
-    nlast=nn; 
-  }
+  LPsol = new myTYPE[nn];
+  LPdsol = new myTYPE[nn]; 
   Conversion=LPmax;
+  time(&starttime);
   RHScol=1;
   mm=mm+1;
   OBJrow=mm;
   AA[OBJrow-1]=new myTYPE[nn];
-  if (debug) cout << "Facet_Q:  create an exra row " << OBJrow << "\n";
+  OBJrow=mm;
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {
       if (debug) cout << "reversing the signs of " << i << "th inequality\n";
@@ -199,7 +189,7 @@ boolean Facet_Q(topeOBJECT tope, rowrange ii)
   for (j=1; j<=nn; j++) AA[OBJrow-1][j-1]=-AA[ii-1][j-1]; 
   AA[OBJrow-1][0]=0;
   AA[ii-1][0]=tempRHS+1;   /* relax the ii-th inequality by +1 */
-  CrissCrossMaximize(cout, cout, AA, BInv, OBJrow, RHScol, 
+  CrissCrossMaximize(cout, cout, AA, InitialRays, OBJrow, RHScol, 
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   if (debug) cout << ii << "-th LP solved with objective value =" << ov << 
     " RHS value = " << tempRHS << "  iter= " << LPiter << "\n";
@@ -214,7 +204,6 @@ boolean Facet_Q(topeOBJECT tope, rowrange ii)
   }
   AA[ii-1][0]=tempRHS;   /* restore the original RHS */
   delete[] AA[OBJrow-1];
-  if (debug) cout << "Facet_Q:  delete the exra row " << OBJrow << "\n";
   mm=mm-1;
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {

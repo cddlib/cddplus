@@ -52,10 +52,9 @@
 
 \bigskip
 {\large Komei Fukuda\\
-   fukuda@ifor.math.ethz.ch  or  fukuda@gssm.otsuka.tsukuba.ac.jp\\
-    Institut fur Operations Research, 
-   ETH Zentrum, CH-8092 Zurich, Switzerland,\\  
-   and  University of Tsukuba, Tokyo, Japan}
+   fukuda@dma.epfl.ch  or  fukuda@gssm.otsuka.tsukuba.ac.jp\\
+   EPFL, Lausanne, Switzerland, and\\
+   University of Tsukuba, Tokyo, Japan}
 
 \bigskip
 {\large (cdd+ Version 0.72,  April 16, 1995)}
@@ -237,15 +236,15 @@ After you run cddr+ (the rational-arithmetic version of cdd+)  with this input f
 an output file, say ucube.ext, which looks like:
 
 \begin{verbatim}
-* cdd+: Double Description Method in C++:Version 0.72 (April 16, 1995)
+* cdd+: Double Description Method in C++:Version 0.55a+ (April 3, 1995)
 * Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
 * Compiled for Rational Exact Arithmetic
 *Input File:ucube.ine(5x4)
 *HyperplaneOrder: LexMin
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Vertex/Ray enumeration is chosen.
-*Computation starts     at Wed Apr 19 17:17:59 1995
-*            terminates at Wed Apr 19 17:18:00 1995
+*Computation starts     at Wed Apr  5 11:45:06 1995
+*            terminates at Wed Apr  5 11:45:07 1995
 *Total processor time = 1 seconds
 *                     = 0h 0m 1s
 *FINAL RESULT:
@@ -777,11 +776,6 @@ computation.
 cone determined by the system is pointed (i.e. the origin is a vertex) , 
 the program cdd does not output this unique vertex.
 
-\item Tope enumeration requires much storage space when the exact
-computation is applied.  Currently we do not know how this happens
-although it is certain that it is something to do with Rational class
-library of g++. In future, this problem will be hopefully eliminated.
-
 \end{itemize}
 
 \section{FTP site}  \label{FTP}
@@ -824,13 +818,11 @@ There are many people who helped me to improve cdd,  in particular,
 I am indebted to Dr. Alain Prodon (EPFL) , Dr. Francois Margot
 (Carnegie Mellon Univ.) , Dr. Henry Crapo (INRIA, France),
 Dr. Alexander Bockmayr (Max Planck Institute, Germany), 
-Mr. David Bremner (McGill University, Canada)  and
-Mr. George Frankhauser (ETH Zurich). 
-
+Dr. David Bremner (McGill University, Canada)  and
+Dr. George Frankhauser (ETH Zurich). 
 Finally, but not least, I would like to thank Prof. H.-J. L\"uthi
 (ETH Zurich) who has made the current new development (cdd+)
-possible.  Some important new features, including the exact computation
-and the tope listing, have been added to cdd with his support.
+possible.
 
 \addtolength{\baselineskip}{-0.5\baselineskip}
 \begin{thebibliography}{99}

@@ -8,7 +8,7 @@ end
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Hull computation is chosen.
 *set_intersection total#, effective#, loss# = 9  9  0
-*Computation starts     at Wed Apr 19 16:32:21 1995
-*            terminates at Wed Apr 19 16:32:22 1995
+*Computation starts     at Sun Apr 16 17:03:27 1995
+*            terminates at Sun Apr 16 17:03:28 1995
 *Total processor time = 1 seconds
 *                     = 0h 0m 1s

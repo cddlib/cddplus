@@ -1,6 +1,6 @@
 /* cddpivot.C:  Pivoting Procedures for cdd.C
    written by Komei Fukuda, fukuda@dma.epfl.ch
-   Version 0.72, April 16, 1995 
+   Version 0.72a, April 25, 1995 
 */
 
 /* cdd.c : C-Implementation of the double description method for
@@ -40,7 +40,7 @@ void free_Bmatrix(Bmatrix T)
   colrange j;
 
   for (j = 0; j < nn; j++) {
-    delete[] T[j];
+    free(T[j]);
   }
 }
 
@@ -438,8 +438,9 @@ void SelectCrissCrossPivot(Amatrix X, Bmatrix T, rowindex OV,
       return;
     }
     else if (rowselected) {
-     for (i=1; i<=mm; i++) {
-       if (bflag[i] >0) { /* i is nonbasic variable */
+      for (k=1; k<=mm; k++) {
+        i=OV[k];
+        if (bflag[i] >0) { /* i is nonbasic variable */
           val=TableauEntry(X,T,*r,bflag[i]);
           if (val > zero) {
             colselected=True;
@@ -451,7 +452,8 @@ void SelectCrissCrossPivot(Amatrix X, Bmatrix T, rowindex OV,
       }
     }
     else if (colselected) {
-      for (i=1; i<=mm; i++) {
+      for (k=1; k<=mm; k++) {
+        i=OV[k];
         if (bflag[i]!=objrow && bflag[i]==-1) {  /* i is a basic variable */
           val=TableauEntry(X,T,i,*s);
           if (val < -zero) {
@@ -674,34 +676,21 @@ When LP is dual-inconsistent then *se returns the evidence column.
   long rank, ideg;
   rowrange i,r,entering,leaving,keyindex;
   colrange j,s;
-  static colset ColSelected;
-  static rowset RowSelected,Basis,Cobasis;
+  colset ColSelected;
+  rowset RowSelected,Basis,Cobasis;
   static rowindex BasisFlag;
   static long mlast=0;
   myTYPE adet=0; /* abs value of the determinant of a basis */
   boolean localdebug=False;
-  static rowindex L, OrderVec;
+  rowindex L, OrderVec;
 
+  L = new long[mm+1];
+  OrderVec = new long[mm+1];
+  for (i=0; i<=mm; i++) { L[i]=0; OrderVec[i]=i;} 
   if (debug) localdebug=True;
-  if (mlast!=mm){
-     if (mlast>0) { /* called previously with different mm */
-       if (localdebug) cout << "CCmaximize: deleting the old memory space with mlast = " << mlast << "\n";
-       delete[] BasisFlag;
-       delete[] L;
-       delete[] OrderVec;
-       set_free(&ColSelected);
-       set_free(&RowSelected);
-       set_free(&Basis);
-       set_free(&Cobasis);
-     }
-     if (localdebug) cout << "CCmaximize: allocating a new memory space with mm = " << mm<< "\n";
-     BasisFlag=new long[mm+1];  
-     L = new long[mm+1];
-     OrderVec = new long[mm+1];
-     set_initialize(&Cobasis,mm);
-     set_initialize(&Basis,mm);
-     set_initialize(&RowSelected, mm);
-     set_initialize(&ColSelected, nn);
+  if (BasisFlag==NULL || mlast!=mm){
+     if (mlast!=mm) free(BasisFlag);   /* called previously with different mm */
+     BasisFlag=(long *) calloc(mm+1, sizeof *BasisFlag);  
      /* initialize only for the first time or when a larger space is needed */
      mlast=mm;
   }
@@ -709,18 +698,17 @@ When LP is dual-inconsistent then *se returns the evidence column.
   rank = 0;
   stop = False;
   PreOrderedRun=False;
+  InitializeBmatrix(InitialRays);
   adet=1.0;
-  set_emptyset(Cobasis);
-  set_emptyset(Basis);
-  set_emptyset(RowSelected);
-  set_emptyset(ColSelected);
+  set_initialize(&Cobasis,mm);
+  set_initialize(&Basis,mm);
+  set_initialize(&RowSelected, mm);
+  set_initialize(&ColSelected, nn);
   set_addelem(RowSelected, OBJrow);
   set_addelem(ColSelected, RHScol);
-  for (j=0; j<=nn; j++) NBIndex[j]=0;
+  for (i=0; i<=mm; i++) BasisFlag[i]=0;
+  for (j=0; j<=NMAX; j++) NBIndex[j]=0;
   for (i=1; i<=mm; i++) {
-    L[i]=0;
-    OrderVec[i]=i; 
-    BasisFlag[i]=0;
     set_addelem(Basis,i);
     BasisFlag[i]=-1;    /* basic variable has index -1 */
     if (EqualityIndex[i]==-1){
@@ -856,6 +844,13 @@ When LP is dual-inconsistent then *se returns the evidence column.
 
   default:break;
   }
+
+  delete[] L;
+  delete[] OrderVec;
+  set_free(&ColSelected);
+  set_free(&RowSelected);
+  set_free(&Basis);
+  set_free(&Cobasis);
 }
 
 void InitializeBmatrix(Bmatrix T)
