@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999
+   Version 0.76, March 20, 1999
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,9 +11,7 @@
 */
 
 #include <fstream>
-#include <libc.h>
 #include <string>
-//#include <strclass.h>
 #include "cddtype.h"
 #include "cddrevs.h"
 
