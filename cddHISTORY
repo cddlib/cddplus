@@ -226,4 +226,8 @@ ccd+ Version 0.72a (April 16, 1995) /
    Cycling bug of Version 072 of LP maximize and minimize has been 
    fixed.
 
+ccd+ Version 0.72b (April 28, 1995) /
+   Yet another bug of maxcutoff and mincutoff options has been 
+   fixed.
+
 --- end of file: cddHISTORY ---

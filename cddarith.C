@@ -1,6 +1,6 @@
 /* cddarith.C:  Arithmetic Procedures for cdd.C
    written by Komei Fukuda, fukuda@dma.epfl.ch
-   Version 0.72, April 16, 1995 
+   Version 0.72b, April 28, 1995 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -925,11 +925,11 @@ void EvaluateARay1(rowrange i)
     printf("Error.  Artificial Ray does not point to FirstRay!!!\n");
   }
   while (Ptr != NULL) {
-    temp = 0.0;
+    temp = 0;
     for (j = 0; j < nn; j++)
       temp += AA[i - 1][j] * Ptr->Ray[j];
     *(Ptr->ARay) = temp;
-    if ( temp <= -zero && Ptr != FirstRay) {
+    if ( temp < -zero && Ptr != FirstRay) {
       /* printf("Moving an infeasible record w.r.t. %ld to FirstRay\n",i); */
       if (Ptr==LastRay) LastRay=PrevPtr;
       TempPtr=Ptr;
@@ -965,7 +965,7 @@ void EvaluateARay2(rowrange i)
   while (Ptr != NULL) {
     NextPtr=Ptr->Next;  /* remember the Next record */
     Ptr->Next=NULL;     /* then clear the Next pointer */
-    temp = 0.0;
+    temp = 0;
     for (j = 0; j < nn; j++)
       temp += AA[i - 1][j] * Ptr->Ray[j];
     *(Ptr->ARay) = temp;
@@ -1176,10 +1176,10 @@ void FeasibilityIndices(long *fnum, long *infnum, rowrange i)
   *infnum = 0;
   Ptr = FirstRay;
   while (Ptr != NULL) {
-    temp = 0.0;
+    temp = 0;
     for (j = 0; j < nn; j++)
       temp += AA[i - 1][j] * Ptr->Ray[j];
-    if (temp >= 0)
+    if (temp >= -zero)
       (*fnum)++;
     else
       (*infnum)++;
@@ -1248,7 +1248,8 @@ void AddNewHyperplane1(rowrange hnew)
 {
   RayRecord *RayPtr0, *RayPtr1, *RayPtr2, *RayPtr2s, *RayPtr3;
   long pos1, pos2;
-  double prevprogress, progress, value1, value2;
+  double prevprogress, progress;
+  myTYPE value1=0, value2=0;
   boolean adj, equal, completed;
 
   EvaluateARay1(hnew);  
@@ -1293,10 +1294,10 @@ void AddNewHyperplane1(rowrange hnew)
     if (debug) {
       WriteRayRecord2(cout, RayPtr1);
       WriteRayRecord2(cout, RayPtr2);
-      printf("check feasibility%8.3f%8.3f\n", value1, value2);
+      cout << "check feasibility " <<  value1 << "  " << value2 << "\n";
     }
     CheckEquality(&RayPtr1, &RayPtr2, &equal);
-    if ((value1 >= zero && value2 <= -zero) || (value2 >= zero && value1 <= -zero)) {
+    if ((value1 > zero && value2 < -zero) || (value2 > zero && value1 < -zero)) {
       switch (AdjacencyTest) {
 
       case Algebraic:
@@ -1314,7 +1315,7 @@ void AddNewHyperplane1(rowrange hnew)
       RayPtr2 = RayPtr2->Next;
       continue;
     }
-    if (value1 <= -zero || equal) {
+    if (value1 < -zero || equal) {
       Eliminate(&RayPtr0);
       RayPtr1 = RayPtr0->Next;
       RayPtr2 = RayPtr2s;
