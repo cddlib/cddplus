@@ -1,0 +1,36 @@
+* cdd+: Double Description Method in C++:Version 0.72 (April 16, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
+*Input File:partialtest1.ine(12x7)
+*HyperplaneOrder: LexMin
+*Degeneracy preknowledge for computation: None (possible degeneracy)
+*Vertex/Ray enumeration is chosen.
+*The equality option is chosen.
+* => Permanently active rows are: 1 12
+*Computation completed at Iteration 12.
+*Computation starts     at Wed Apr 19 16:34:44 1995
+*            terminates at Wed Apr 19 16:34:44 1995
+*Total processor time = 0 seconds
+*                     = 0h 0m 0s
+*FINAL RESULT:
+*Number of Vertices =16, Rays =0
+begin
+16  7  real
+ 1 0 1 1 1 0 1
+ 1 0 0 1 1 0 1
+ 1 0 1 0 1 0 1
+ 1 0 0 0 1 0 1
+ 1 0 1 0 0 0 1
+ 1 0 0 0 0 0 1
+ 1 0 0 1 0 0 1
+ 1 0 1 1 0 0 1
+ 1 0 0 0 0 1 1
+ 1 0 1 0 0 1 1
+ 1 0 0 1 0 1 1
+ 1 0 1 1 0 1 1
+ 1 0 0 0 1 1 1
+ 1 0 1 0 1 1 1
+ 1 0 0 1 1 1 1
+ 1 0 1 1 1 1 1
+end
+hull

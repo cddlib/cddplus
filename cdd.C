@@ -1,0 +1,751 @@
+/* cdd.C: Main program of the sofware cdd+
+   written by Komei Fukuda, fukuda@ifor.math.ethz.ch
+   Version 0.72, April 16, 1995
+   Standard ftp site: ftp.epfl.ch,  Directory: incoming/dma
+*/
+
+/* cdd+ : C++-Implementation of the double description method for
+   computing all vertices and extreme rays of the polyhedron 
+   P= {x :  b - A x >= 0}.
+   Please read COPYING (GNU General Public Licence) and
+   the manual cddman.tex for detail.
+*/
+
+/*  This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+/* The first version C0.21 was created on November 10,1993 
+   with Dave Gillespie's p2c translator 
+   from the Pascal program pdd.p written by Komei Fukuda. 
+*/
+
+#include <fstream.h>
+#include <strclass.h>
+#include "cddtype.h"
+#include "cddrevs.h"
+
+extern "C" {
+#include "setoper.h" 
+  /* set operation library header (April 15, 1995 version or later) */
+#include "cdddef.h"
+#include "cdd.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+/* #include <profile.h>    THINK C PROFILER */
+/* #include <console.h>    THINK C PROFILER */
+} /* end of extern "C"  */
+
+
+long minput, ninput;   /*size of input data [b -A] */
+long mm, nn;   /*size of the homogenous system to be solved by dd*/
+long projdim;  /*dimension of orthogonal preprojection */
+colset projvars;   /*set of variables spanning the space of preprojection, 
+     i.e. the remaining variables are to be removed*/
+rowset EqualitySet, NonequalitySet, GroundSet, Face, Face1;
+rowrange Iteration, hh;
+rowindex OrderVector;  /* the permutation vector to store a preordered row indeces */
+rowindex EqualityIndex;  
+  /* ith component is 1 if it is equality, -1 if it is strict inequality, 0 otherwise. */
+rowset AddedHyperplanes, WeaklyAddedHyperplanes, InitialHyperplanes;
+long RayCount, FeasibleRayCount, WeaklyFeasibleRayCount,
+  TotalRayCount, VertexCount, ZeroRayCount;
+long EdgeCount, TotalEdgeCount;
+long count_int=0,count_int_good=0,count_int_bad=0;
+boolean DynamicWriteOn, DynamicRayWriteOn, LogWriteOn, 
+  ShowSignTableauOn=False, OptimizeOrderOn=False, PostAnalysisOn=False, debug;
+Amatrix AA;
+Bmatrix InitialRays;
+colindex InitialRayIndex; /* 0 if the corr. ray is for generator of an extreme line */ 
+colrange RHScol;   /* LP RHS column */
+rowrange OBJrow;   /* LP OBJ row */
+LPStatusType LPStatus;
+Arow LPcost;  /* LP cost vector to be maximized  */
+RayRecord *ArtificialRay, *FirstRay, *LastRay;
+RayRecord *PosHead, *ZeroHead, *NegHead, *PosLast, *ZeroLast, *NegLast;
+AdjacencyRecord *Edges[MMAX];  /* adjacency relation storage for iteration k */
+boolean RecomputeRowOrder, found, inputsuccessful;
+HyperplaneOrderType HyperplaneOrder;
+AdjacencyTestType AdjacencyTest;
+NumberType Number;
+char *InputNumberString, *OutputNumberString;
+InequalityType Inequality;
+boolean NondegAssumed;   /* Nondegeneacy preknowledge flag */
+boolean InitBasisAtBottom;  /* if it is on, the initial Basis will be selected at bottom */
+boolean RestrictedEnumeration; /* Restricted enumeration switch (True if it is restricted on the intersection of EqualitySet hyperplanes) */
+boolean RelaxedEnumeration; /* Relaxed enumeration switch (True if NonequalitySet inequalities must be satisfied with strict inequality) */
+boolean RowDecomposition; /* Row decomposition enumeration switch */
+boolean VerifyInput; /* Verification switch for the input data */
+boolean PreOrderedRun; 
+  /* True if the rows are ordered before execution & all necessary adjacencies are stored */
+CompStatusType CompStatus;  /* Computation Status */
+ConversionType Conversion;
+IncidenceOutputType IncidenceOutput;
+AdjacencyOutputType AdjacencyOutput;
+ErrorType Error;
+FileInputModeType FileInputMode;
+DataFileType inputfile,ifilehead,ifiletail,
+  outputfile,projfile,icdfile,adjfile,logfile,dexfile,verfile;
+time_t starttime, endtime;
+unsigned int rseed=1;  /* random seed for random row permutation */
+
+myTYPE zero=ZERO;    /*Rational or floating zero*/
+
+void DefaultOptionSetup(void)
+{
+  debug = False;
+  DynamicWriteOn = True;
+  DynamicRayWriteOn = True;
+  LogWriteOn = False;
+  HyperplaneOrder = LexMin;
+  AdjacencyTest = Combinatorial;
+  NondegAssumed = False;
+  RecomputeRowOrder=True;
+  PreOrderedRun=True;
+  VerifyInput=False;
+  Conversion = IneToExt;
+    
+  IncidenceOutput = IncOff;
+  AdjacencyOutput = AdjOff;
+  InitBasisAtBottom = False;
+}
+
+void DDMain(ostream &f,ostream &f_log)
+{
+  Iteration = nn + 1;
+  while (Iteration <= mm) {
+    SelectNextHyperplane(HyperplaneOrder, WeaklyAddedHyperplanes, &hh, &RecomputeRowOrder);
+    if (DynamicWriteOn) {
+      cout << "*----------  Iteration = " << Iteration << " :   add  row # " << hh << "  ----------\n";
+    }
+    if (set_member(hh,NonequalitySet)){  /* Skip the row hh */
+      if (DynamicWriteOn) {
+        cout << "*The row # " << hh << " should be inactive and thus skipped.\n";
+      }
+      set_addelem(WeaklyAddedHyperplanes, hh);
+    } else {
+      if (PreOrderedRun)
+        AddNewHyperplane2(hh);
+      else
+        AddNewHyperplane1(hh);
+      set_addelem(AddedHyperplanes, hh);
+      set_addelem(WeaklyAddedHyperplanes, hh);
+    }
+    (f_log) << Iteration << " " <<  hh << " " << TotalRayCount << " " <<
+      RayCount << " " << FeasibleRayCount << "\n";
+    if (CompStatus==AllFound||CompStatus==RegionEmpty) {
+      set_addelem(AddedHyperplanes, hh);
+      goto _L99;
+    }
+    Iteration++;
+  }
+  _L99:;
+}
+
+
+
+void Initialization(int ARGC, char *ARGV[])
+/* Initialization of global variables */
+{
+  Error=None;
+  CompStatus=InProgress;
+  if (ARGC>1){
+    FileInputMode=Auto;
+    strcpy(inputfile,ARGV[1]);
+  }
+  else{
+    FileInputMode=Manual;
+  }
+}
+
+void DDEnumerate(ostream &f, ostream &f_log)
+{
+  DDInit();
+  time(&starttime);
+  FindInitialRays(InitialHyperplanes, InitialRays, InitialRayIndex, &found);
+  if (found) {
+    InitialDataSetup();
+    InitialWriting(f, f_log);
+    DDMain(f, f_log);
+    WriteExtFile(f, f_log);
+    if (IncidenceOutput == IncSet){
+      SetWriteFileName(icdfile, 'i', "incidence");
+      ofstream writing_icd(icdfile);
+      WriteIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    }
+    if (AdjacencyOutput != AdjOff){
+      SetWriteFileName(adjfile, 'a', "adjacency");
+      ofstream writing_adj(adjfile);
+      if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
+      WriteAdjacencyFile(writing_adj);
+      writing_adj.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+    }
+    FreeDDMemory();
+  } else {
+    WriteExtFile(f, f_log);
+    WriteErrorMessages(f);
+  }
+}
+
+void DecompositionCore(ostream &f, ostream &f_log)
+{
+  DDInit();
+  time(&starttime);
+  FindInitialRays(InitialHyperplanes, InitialRays, InitialRayIndex, &found);
+  if (found) {
+    InitialDataSetup();
+    InitialWriting(f, f_log);
+    DDMain(f, f_log);
+    time(&endtime);
+    WriteDecompResult(f, f_log);
+    FreeDDMemory();
+  } else {
+    time(&endtime);
+    WriteDecompResult(f, f_log);
+    WriteErrorMessages(cout);
+    WriteErrorMessages(f);
+  }
+}
+
+void DDRowDecomposition(ostream &f, ostream &f_log)
+{
+  rowrange i,k;
+  long FeasibleRaySum=0;
+  time_t starttime_save;
+  
+  time(&starttime_save);
+  SetWriteFileName(dexfile, 'd', "row-decomposition");
+  ofstream writing_dex(dexfile);
+
+  RestrictedEnumeration=True;
+  RelaxedEnumeration=True;
+  for (i = 0; i <= mm; i++) EqualityIndex[i]=0;
+  for (k = 1; k <= mm-nn+2; k++){
+    EqualityIndex[k]=1;   /* Equality for k-th inequality */
+    if (k>=2) EqualityIndex[k-1]=-1;  /* Strict inequality for 1,2,...,(k-1)st inequalities */
+    if (DynamicWriteOn) {
+      (f) << "* Decomposition problem number = " << k << "(/" << (mm-nn+2) << ")\n";
+      cout << "* Decomposition problem number = " << k << "(/" << (mm-nn+2) << ")\n";
+    }
+    DecompositionCore(f, f_log);
+    FeasibleRaySum=FeasibleRaySum+FeasibleRayCount;
+  }
+  switch (Inequality) {
+  case ZeroRHS:
+    writing_dex << "*Total outputs = " << FeasibleRaySum << " " << (nn+1) 
+       << "  " << OutputNumberString << "\n";
+    cout << "*Total outputs = " << FeasibleRaySum << " " << (nn+1) 
+       << "  " << OutputNumberString << "\n";
+    break;
+  case NonzeroRHS:
+    writing_dex << "*Total outputs = " << FeasibleRaySum << " " << nn 
+       << "  " << OutputNumberString << "\n";
+    cout << "*Total outputs = " << FeasibleRaySum << " " << nn 
+       << "  " << InputNumberString << "\n";
+    break;
+  }
+  DDInit();
+  for (i = 0; i <= mm; i++) {
+    EqualityIndex[i]=0;
+    set_addelem(AddedHyperplanes,i);
+  }
+  CompileDecompResult(writing_dex);
+  starttime=starttime_save;
+  RestrictedEnumeration=False;
+  RelaxedEnumeration=False;
+  WriteExtFile(f, f_log);
+  if (IncidenceOutput == IncSet){
+    SetWriteFileName(icdfile, 'i', "incidence");
+    ofstream writing_icd(icdfile);
+    WriteIncidenceFile(writing_icd);
+    if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+  }
+  if (AdjacencyOutput != AdjOff){
+    SetWriteFileName(adjfile, 'a', "adjacency");
+    ofstream writing_adj(adjfile);
+    if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
+    WriteAdjacencyFile(writing_adj);
+    writing_adj.close();
+    if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+  }
+  writing_dex.close();
+  FreeDDMemory();
+}
+
+void PreProjection(ostream &f, ostream &f_log)
+{
+  rowset subrows1,subrows2,DBrows;
+  colset subcols1,subcols2;  /* subcols1:projvars,  subcols2:rest */
+  rowrange i;
+  colrange j,k;
+  colindex pivrow;
+  Bmatrix DBinv;  /* dual basis matrix inverse */
+  long DBrank;
+ 
+  time(&starttime);
+  set_initialize(&subrows1,mm);
+  set_initialize(&subrows2,mm);
+  set_initialize(&DBrows,mm);
+  set_initialize(&subcols1,nn);  /* subcol1 : projvar & RHS columns */
+  set_initialize(&subcols2,nn);  /* subcol2 : remaining columns */
+  SetWriteFileName(projfile, 'p', "preprojection variable subsystem");
+  ofstream writing_proj(projfile);
+  for (j=1;j<=nn;j++){
+    if (set_member(j,projvars) || (j==1 && Inequality==NonzeroRHS))
+      set_addelem(subcols1,j);
+    else
+      set_addelem(subcols2,j);
+  }
+  for (i=1; i<=mm; i++) set_addelem(subrows1,i);
+  if (DynamicWriteOn){
+    WriteSubMatrixOfAA(cout,subrows1,subcols1,Inequality);
+  }
+  WriteSubMatrixOfAA(writing_proj,subrows1,subcols1,Inequality);
+  Inequality=ZeroRHS;
+  ReduceAA(subrows1,subcols2);
+    /* Extract the submatrix of AA index by subcols2. 
+       subcols2 is changed to a consecutive sequence starting from 1 */
+  if (debug) {
+    WriteAmatrix(cout,AA,mm,nn,NonzeroRHS);
+    WriteAmatrix(f,AA,mm,nn,NonzeroRHS);
+  }
+  PreOrderedRun=False;
+  InitializeBmatrix(DBinv);
+  FindBasis(AA,MinIndex,DBrows,pivrow,DBinv,&DBrank);
+    /* DBrows stores the rows associated with a dual basis */
+  if (debug){
+    printf("rank of the new (deletion col) matrix is %ld\n", DBrank);
+    printf("dual basis rows ="); set_write(DBrows);
+    for (j=1;j<=nn;j++) (f) << "pivot row at col " << j << " = " << pivrow[j] << "\n";
+  }
+  set_diff(subrows2,subrows1,DBrows); 
+    /* subrows2 stores the rows not in DBrows */
+  for (j=1; j<=nn;j++){
+    if (pivrow[j]==0) {
+      set_delelem(subcols2,j);
+      (f) << "Warning: col " << j << " is a linear combination of the other colums. The column linear dependency must be deleted for ray computation\n";
+      for (k=j; k<=nn-1; k++){ /* shifting all pivrow information */
+        pivrow[j]=pivrow[j+1];
+      }
+      pivrow[nn]=0;
+      nn--;
+    }
+  }
+  if (debug)  {
+    printf("rows for ray enumeration:");set_write(subrows2);
+    printf("cols for ray enumeration:");set_write(subcols2);
+  }
+  ReduceAA(subrows2,subcols2); 
+    /* subrows2 is changed to a consecutive sequence starting from 1 */
+  DualizeAA(DBinv);
+  if (Error==DimensionTooLarge) goto _L99;
+  if (debug) {
+    WriteAmatrix(cout,AA,mm,nn,ZeroRHS);
+    WriteAmatrix(f,AA,mm,nn,ZeroRHS);
+  }
+  if (DynamicWriteOn) {
+    WriteRunningMode(cout);
+  }
+  DDInit();
+  FindInitialRays(InitialHyperplanes, InitialRays, InitialRayIndex, &found);
+  if (found) {
+    InitialDataSetup();
+    InitialWriting(f, f_log);
+    DDMain(f,f_log);
+    WriteProjResult(f, f_log, pivrow);
+    if (IncidenceOutput == IncSet){
+      SetWriteFileName(icdfile, 'i', "incidence");
+      ofstream writing_icd(icdfile);
+      WriteIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    }
+    if (AdjacencyOutput != AdjOff){
+      SetWriteFileName(adjfile, 'a', "adjacency");
+      ofstream writing_adj(adjfile);
+      if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
+      WriteAdjacencyFile(writing_adj);
+      writing_adj.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+    }
+    FreeDDMemory();
+  } else {
+    _L99:;
+    WriteErrorMessages(cout);
+    WriteErrorMessages(f);
+  }
+  set_free(&subrows1);
+  set_free(&subrows2);
+  set_free(&DBrows);
+  set_free(&subcols1);
+  set_free(&subcols2);
+}
+
+
+int main(int argc, char *argv[])
+{
+  OutputHeading();
+  DefaultOptionSetup();
+  Initialization(argc, argv);
+  AmatrixInput(&inputsuccessful);
+
+  if (inputsuccessful) {
+    SetWriteFileName(logfile,'l',"log");
+    ofstream writing_log(logfile);
+    if (VerifyInput){
+      SetWriteFileName(verfile,'v',"input verification");
+      ofstream writing_ver(verfile);
+      WriteSolvedProblem(writing_ver);
+      writing_ver.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",verfile);
+     }
+    if (DynamicWriteOn) {
+      WriteRunningMode(cout);
+    }
+    SetWriteFileName(outputfile,'o',"output");
+    if (PostAnalysisOn){
+      /* Post analysis is chosen */
+      ifstream reading_ext(outputfile);
+      PostAnalysisMain(reading_ext, writing_log);
+    }
+    else {
+      ofstream writing(outputfile);
+      switch (Conversion) {
+      case ExtToIne: case IneToExt: /* vertex/facets enumeration is chosen */
+        if (RowDecomposition) DDRowDecomposition(writing,writing_log);
+        else DDEnumerate(writing, writing_log);
+        break;
+    
+      case LPmax:  case LPmin:      /* LP is chosen */
+        LPMain(writing, writing_log);
+        break;
+
+      case FacetListing:          /* FacetListing is chosen */
+        FacetListMain(writing, writing_log);
+        break;
+
+      case TopeListing:           /* FacetListing is chosen */
+        TopeListMain(writing, writing_log);
+        break;
+
+      case Projection:            /* preprojection is chosen */
+        PreProjection(writing, writing_log);
+        break;
+
+      case InteriorFind:      /* Interior point search is chosen */
+        boolean found;
+        InteriorFindMain(writing, writing_log, &found);
+        break;
+  
+      default: break;
+      }
+      if (writing.is_open()) {
+        writing.close();
+        if (DynamicWriteOn) printf("closing the file %s\n",outputfile);
+      }   
+    }
+    if (writing_log.is_open()) {
+      writing_log.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",logfile);
+    }
+  } else {
+    ofstream writing("cdd.error");
+    WriteErrorMessages(writing);
+    writing.close();
+  }
+
+  /* DumpProfile();    THINK C PROFILER */
+  /* exit(0);          THINK C PROFILER */
+}
+
+
+void CompileDecompResult(ofstream &f)
+{
+  long i,j,k;
+  myTYPE value=0;
+  long mray,nray;
+  char numbtype[wordlenmax],command[wordlenmax];
+  boolean localdebug=False;
+  myTYPE* vec;
+  
+  vec = new myTYPE[mm];
+  AddArtificialRay();
+  if ((f).is_open()){
+    (f).close();
+    if (DynamicWriteOn) printf("closing the file %s\n",dexfile);
+  }
+  ifstream reading_dex(dexfile);
+  for (i=1; i<=mm-nn+2;i++){
+    found=False;
+    while (!found)
+    {
+      if (reading_dex.eof()) {
+       Error=ImproperInputFormat;
+       goto _L99;
+      }
+      else {
+        reading_dex >> command;
+        if (strncmp(command, "begin", 5)==0) {
+          found=True;
+        }
+      }
+    }
+    reading_dex >> mray;
+    reading_dex >> nray;
+    reading_dex >> numbtype;
+    if (localdebug) printf("decomp size = %ld x %ld\nNumber Type = %s\n", mray, nray, numbtype);
+    for (k=1; k<=mray;k++){
+      for (j=1; j<=nray; j++){
+        reading_dex >> value;
+        if (Inequality==NonzeroRHS) {
+          vec[j - 1] = value;
+        } else if (j>=2) {
+          vec[j - 2] = value;
+        }
+        if (localdebug) WriteNumber(cout, value);
+      }
+      if (localdebug) printf("\n");
+      AddRay(vec);
+    }
+  }
+_L99:;
+}
+
+void  PostAnalysisMain(ifstream &f, ostream &f_log)
+{
+  rowrange i,k;
+  
+  time(&starttime);
+  DDInit();
+  if (f.is_open()) {
+    ReadExtFile(f);
+    RestrictedEnumeration=False;
+    RelaxedEnumeration=False;
+    for (i=1; i<=mm; i++) set_addelem(AddedHyperplanes, i);
+    if (IncidenceOutput == IncSet){
+      SetWriteFileName(icdfile, 'i', "incidence");
+      ofstream writing_icd(icdfile);
+      WriteIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    }
+    if (AdjacencyOutput != AdjOff){
+      SetWriteFileName(adjfile, 'a', "adjacency");
+      ofstream writing_adj(adjfile);
+      if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
+      WriteAdjacencyFile(writing_adj);
+      writing_adj.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+    }
+    FreeDDMemory();
+  } else {
+    Error=FileNotFound;
+    WriteErrorMessages(cout);
+    WriteErrorMessages(f_log);
+  }
+}
+
+void ReadExtFile(ifstream &f)
+{
+  long i,j,k;
+  myTYPE value=0;
+  long mray,nray;
+  char numbtype[wordlenmax],command[wordlenmax];
+  boolean localdebug=True;
+  myTYPE* vec;
+  
+  vec = new myTYPE[mm];
+  AddArtificialRay();
+  if (!f.is_open()) {
+    Error=ImproperInputFormat;
+    goto _L99;
+  };
+  found=False;
+  while (!found)
+  {
+    if (f.eof()) {
+     Error=ImproperInputFormat;
+     goto _L99;
+    }
+    else {
+      f >> command;
+      if (strncmp(command, "begin", 5)==0) {
+        found=True;
+      }
+    }
+  }
+  f >> mray;
+  f >> nray;
+  f >> numbtype;
+  if (localdebug) printf("ext object size = %ld x %ld\nNumber Type = %s\n", mray, nray, numbtype);
+  for (k=1; k<=mray;k++){
+    for (j=1; j<=nray; j++){
+      f >> value;
+      if (Inequality==NonzeroRHS) {
+        vec[j - 1] = value;
+      } else if (j>=2) {
+        vec[j - 2] = value;
+      }
+      if (localdebug) WriteNumber(cout, value);
+    }
+    if (localdebug) printf("\n");
+    AddRay(vec);
+  }
+_L99:;
+}
+
+void DDInit(void)
+{
+  colrange j;
+
+  Error=None;
+  CompStatus=InProgress;
+  SetInequalitySets(EqualityIndex);
+  set_initialize(&InitialHyperplanes,mm);
+  set_initialize(&AddedHyperplanes,mm);
+  set_initialize(&WeaklyAddedHyperplanes,mm);
+  set_initialize(&Face, mm);   /* used in CheckAdjacency  */
+  set_initialize(&Face1, mm);  /* used in CheckAdjacency  */
+  OrderVector=(long *)calloc(mm+1, sizeof *OrderVector);
+  if (debug) WriteAmatrix(cout,AA,mm,nn, Inequality);
+  ComputeRowOrderVector(OrderVector, HyperplaneOrder);
+  RecomputeRowOrder=False;
+  InitializeBmatrix(InitialRays);
+  if (debug) WriteBmatrix(cout,InitialRays);
+  RayCount = 0;
+  TotalRayCount = 0;
+  FeasibleRayCount = 0;
+  WeaklyFeasibleRayCount = 0;
+  VertexCount = 0;
+  EdgeCount=0; /* active edge count */
+  TotalEdgeCount=0; /* active edge count */
+}
+
+void InitialDataSetup(void)
+{
+  long j, r;
+  rowset ZSet;
+  myTYPE *vec1, *vec2;
+
+  vec1 = new myTYPE[nn];
+  vec2 = new myTYPE[nn];
+  RecomputeRowOrder=False;
+  ArtificialRay = NULL;
+  FirstRay = NULL;
+  LastRay = NULL;
+  set_initialize(&ZSet,mm);
+  AddArtificialRay();
+  Iteration = nn;   /*Initially,we have already  nn  hyperplanes */
+  set_copy(AddedHyperplanes, InitialHyperplanes);
+  set_copy(WeaklyAddedHyperplanes, InitialHyperplanes);
+  UpdateRowOrderVector(InitialHyperplanes);
+  for (r = 1; r <= nn; r++) {
+    for (j = 0; j < nn; j++){
+      vec1[j] = InitialRays[j][r-1];
+      vec2[j] = -InitialRays[j][r-1];
+    }
+    Normalize(vec1);
+    Normalize(vec2);
+    ZeroIndexSet(vec1, ZSet);
+    if (set_subset(EqualitySet, ZSet)){
+      if (debug) {
+        printf("add an initial ray with zero set:");
+        set_write(ZSet);
+      }
+      AddRay(vec1);
+      if (InitialRayIndex[r]==0) {
+        AddRay(vec2);
+        if (debug) {
+          printf("and add its negative also.\n");
+        }
+      }
+    }
+  }
+  CreateInitialEdges();
+  set_free(&ZSet);
+}
+
+
+void LPMain(ostream &f, ostream &f_log)
+{
+  colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
+  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  rowrange re;  /* evidence row when LP is inconsistent */
+  colrange se;  /* evidence col when LP is dual-inconsistent */
+  myTYPE ov=0;  /* LP optimum value */
+  long LPiter;
+  Bmatrix BasisInv;
+
+  time(&starttime);
+  LPsol = new myTYPE[nn];
+  LPdsol = new myTYPE[nn];
+  InitializeBmatrix(BasisInv); 
+  if (Inequality==ZeroRHS){
+    printf("Sorry, LP optimization is not implemented for RHS==0.\n");
+    goto _L99;
+  }
+  if (Conversion==LPmax){
+    CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+      &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+  }
+  else if (Conversion==LPmin){
+    CrissCrossMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+      &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+  }
+  WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
+  if (DynamicWriteOn)
+    WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
+_L99:;
+  delete[] LPsol;  delete[] LPdsol; 
+  free_Bmatrix(BasisInv);
+}
+
+void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
+{
+  colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
+  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  LPsol = new myTYPE[nn];
+  LPdsol = new myTYPE[nn]; 
+  rowrange re;  /* evidence row when LP is inconsistent */
+  colrange se;  /* evidence col when LP is dual-inconsistent */
+  myTYPE ov=0;  /* LP optimum value */
+  long LPiter;
+  Bmatrix BasisInv;
+
+  *found = False;
+  if (Inequality==ZeroRHS){
+    printf("Sorry, find_interior is not implemented for RHS==0.\n");
+    goto _L99;
+  }
+  EnlargeAAforInteriorFinding();
+  InitializeBmatrix(BasisInv);
+  time(&starttime);
+  OBJrow=mm; RHScol=1;
+  CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+    &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+  WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
+  if (LPStatus==Optimal || LPStatus==DualInconsistent) *found=True;
+  if (DynamicWriteOn)
+    WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
+  free_Bmatrix(BasisInv);
+  RecoverAAafterInteriorFinding();
+_L99:;
+  delete[] LPsol;  delete[] LPdsol;
+}
+
+
+/* end of cdd.C */

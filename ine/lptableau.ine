@@ -1,0 +1,16 @@
+file name: testcc.ine
+begin
+    6   3    integer
+ -2    1   0
+  2    0  -1
+ -1    1   0
+ -1    0   1
+  4   -1  -1
+  1   -1   1
+end
+maximize
+  0    1  -1
+minindex
+show_tableau
+logfile_on
+

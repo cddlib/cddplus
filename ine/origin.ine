@@ -1,0 +1,13 @@
+File name: origin.ine
+The polytope consisting of a single point, the origin.
+begin
+    7   7     integer
+ 0  1  0  0  0  0  0
+ 0  0  1  0  0  0  0
+ 0  0  0  1  0  0  0
+ 0  0  0  0  1  0  0
+ 0  0  0  0  0  1  0
+ 0  0  0  0  0  0  1
+ 0 -1 -1 -1 -1 -1 -1
+end
+ 

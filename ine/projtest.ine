@@ -1,0 +1,20 @@
+file name: projtest.ine
+3d preprojection of 6 dimensional hypercube
+begin
+    12    7    integer
+ 0  1  0  0  0  0  0
+ 0  0  1  0  0  0  0
+ 0  0  0  1  0  0  0
+ 0  0  0  0  1  0  0
+ 0  0  0  0  0  1  0
+ 0  0  0  0  0  0  1
+ 1 -1  0  0  0  0  0
+ 1  0 -1  0  0  0  0
+ 1  0  0 -1  0  0  0
+ 1  0  0  0 -1  0  0
+ 1  0  0  0  0 -1  0
+ 1  0  0  0  0  0 -1
+end
+preprojection
+3 1 2 3 
+

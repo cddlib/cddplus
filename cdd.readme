@@ -1,0 +1,123 @@
+1995-04-16
+---------------------------------------
+PROGRAM cdd+ (version 0.72) README FILE
+---------------------------------------
+The program  cdd+  is a C++ implementation of the Double Description 
+Method of Motzkin et al. for generating all vertices (i.e. extreme points)
+and extreme rays of a general convex polyhedron in R^d given by a system 
+of linear inequalities:
+
+   P = { x :  A  x  <=  b }
+
+where  A  is an m x d real matrix and b is a real m dimensional vector.
+The program can be used for the reverse operation (i.e. convex hull
+computation) if one run cdd with "hull" option.  This means that 
+one can move back and forth between an inequality representation 
+and a generator (i.e. vertex and ray) representation of a polyhedron
+with cdd+.  Also, cdd+ can solve a linear programming problem, i.e.
+a problem of maximizing and minimizing a linear function over P.
+
+The program cdd+ is a C++ version of the ANSI C
+program cdd basically for the same purpose.  The main difference is that 
+it can be compiled for both rational (exact) arithmetic and 
+floating point arithmetic. (Note that cdd runs on floating
+arithmetic only.)  Since cdd+ uses GNU g++ library, in particular 
+Rational library, one needs a recent (2.6.0 or higher) gcc compiler
+and g++-lib.  The program seems to be most
+stable when compiled with gcc-2.6.3 and libg++-2.6.2. 
+
+The new version 0.72 has a new option "postanalysis" which lets
+the user to generate the adjacency and incidence files after
+the vertex/extreme rays are computed. Also, (from verion 0.71)
+one can check if the given system of linear inequalities contains
+any redundant constraints by using "facet_listing" option.
+Furthermore, with "tope_listing" option, one can generates
+all full-dimensional regions (topes) of the arrangement
+of hyperplanes associated with the input polyhedron.  
+
+The cdd+ package is in "tar"ed and "compress"ed format with name
+cdd+-***.tar.Z, where *** is the version number.  The standard
+anonymous ftp site for the package is
+
+     ftp site : ftp.efpl.ch (128.178.139.3)
+     directory: incoming/dma
+     file name: cdd+-***.tar.gz
+
+     ftp site : ifor13.ethz.ch (129.132.154.13)
+     directory: pub/fukuda/cdd
+     file name: cdd+-***.tar.gz
+
+In order to unpack the package in a standard unix environment, type 
+   
+     % gunzip cdd+-***.tar.gz
+     % tar xvf cdd+-***.tar
+
+where *** must be replaced by the appropriate version number, and
+% is a unix prompt. If you have GNU zcat command, one can simply
+unpack the package at once by
+
+     % zcat cdd+-***.tar.gz | tar xvf - 
+
+The package cdd+ consists of the following files which will be
+placed in a newly created sub-directory cdd+-*** :
+
+     cdd.readme     This file itself
+
+     cdd.C         C++ main source file
+     cddarith.C    C++ main arithmetic code 
+     cddpivot.C    C++ pivot operation arithmetic code 
+     cddio.C       C++ IO code 
+     cddrevs.C     C++ reverse search code 
+     cdd.h         The header file for cdd.C
+     cdddef.h      cdd+ definition file (whose two lines are to be edited by user)
+     cddtype.h     cdd+ arithmetic type definition file
+     cddrevs.h     The header file for cddrevs.C
+     setoper.C     C++ library for set operation
+     setoper.h     The header file for setoper.C 
+
+     cddman.tex    Latex source file of cdd+ User Manual
+     cddHISTORY    brief description of changes made at each updates
+     ine           A subdirectory containing sample input files
+     ext           A subdirectory containing sample output files
+     COPYING       GNU GENERAL PUBLIC LICENSE
+
+Before using the software, please read COPYING and
+and read the manual cddman.tex.  
+
+To compile the manual cddman.tex (in latex format) in a standard unix 
+environment, run the following command twice: 
+
+   % latex cddman.tex
+
+to get the dvi file, cddman.dvi.  On the printing or viewing commands
+for cddman.dvi file, please ask a local system administrator.
+
+For compilation of cdd+, edit Makefile according to the local
+setup of a GNU gcc compiler and g++-library, and type
+
+   % make all
+
+which creates two executables, cddr+ and cddf+.  The executable
+cddr+ computes with rational (exact arithmetic) and cddf+ computes
+with floating-point arithmetic.  If you want to create only one of
+them, use "make cddf+" or "make cddr+".  Once these executables are 
+created one might want to remove all object files *.o by
+
+   % rm *.o
+
+There is a supplementary  C program, called domcheck,
+written by Francois Margot of EPFL, which can be used with cdd+ 
+to compute the orthogonal projection of a polyhedron onto
+the subspace of any subset of variables.  The program domcheck
+can be obtained from the same ftp site above. Note that
+one needs the additional commercial program CPLEX to run domcheck.
+Also it runs on floating-point arithmetic only.
+
+For more information, contact
+   Komei Fukuda
+   fukuda@ifor.math.ethz.ch
+   Institut fur Operations Research 
+   ETH Zentrum, CH-8092 Zurich, Switzerland  
+   fax +41-1-632 1025   tel +41-1-632 4023 or 4028 
+
+// END of cdd.readme 

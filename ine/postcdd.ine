@@ -1,0 +1,49 @@
+file name: postcdd.ine
+This file is the same as ccc6.ine 
+except for options.  This file is 
+to illustrate how "postanalysis" option can be used
+to generate adjacency and incidence files
+after ccc6.ext is generated.  
+Obtain ccc6.ext first with ccc6.ine, and 
+rename this file as ccc6.ine.  Then run cddr+ 
+or cddf+ again with the new ccc6.ine.
+
+begin
+  31  16   integer
+0   1 1 1 1 1 0 0 0 0 0 0 0 0 0 0
+0   0 1 1 1 1 1 1 1 1 0 0 0 0 0 0
+0   1 0 1 1 1 1 0 0 0 1 1 1 0 0 0
+0   1 1 0 1 1 0 1 0 0 1 0 0 1 1 0
+0   1 1 1 0 1 0 0 1 0 0 1 0 1 0 1
+0   1 1 1 1 0 0 0 0 1 0 0 1 0 1 1
+0   0 0 1 1 1 0 1 1 1 1 1 1 0 0 0
+0   0 1 0 1 1 1 0 1 1 1 0 0 1 1 0
+0   0 1 1 0 1 1 1 0 1 0 1 0 1 0 1
+0   0 1 1 1 0 1 1 1 0 0 0 1 0 1 1
+0   1 0 0 1 1 1 1 0 0 0 1 1 1 1 0
+0   1 0 1 0 1 1 0 1 0 1 0 1 1 0 1
+0   1 0 1 1 0 1 0 0 1 1 1 0 0 1 1
+0   1 1 0 0 1 0 1 1 0 1 1 0 0 1 1
+0   1 1 0 1 0 0 1 0 1 1 0 1 1 0 1
+0   1 1 1 0 0 0 0 1 1 0 1 1 1 1 0
+0   0 0 0 1 1 0 0 1 1 0 1 1 1 1 0
+0   0 0 1 0 1 0 1 0 1 1 0 1 1 0 1
+0   0 0 1 1 0 0 1 1 0 1 1 0 0 1 1
+0   0 1 0 0 1 1 0 0 1 1 1 0 0 1 1
+0   0 1 0 1 0 1 0 1 0 1 0 1 1 0 1
+0   0 1 1 0 0 1 1 0 0 0 1 1 1 1 0
+0   1 0 0 0 1 1 1 1 0 0 0 1 0 1 1
+0   1 0 0 1 0 1 1 0 1 0 1 0 1 0 1
+0   1 0 1 0 0 1 0 1 1 1 0 0 1 1 0
+0   1 1 0 0 0 0 1 1 1 1 1 1 0 0 0
+0   0 0 0 0 1 0 0 0 1 0 0 1 0 1 1
+0   0 0 0 1 0 0 0 1 0 0 1 0 1 0 1
+0   0 0 1 0 0 0 1 0 0 1 0 0 1 1 0
+0   0 1 0 0 0 1 0 0 0 1 1 1 0 0 0
+0   1 0 0 0 0 1 1 1 1 0 0 0 0 0 0
+end
+hull
+incidence
+adjacency
+postanalysis
+

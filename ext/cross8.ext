@@ -1,0 +1,33 @@
+* cdd+: Double Description Method in C++:Version 0.72 (April 16, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
+*Input File:cross8.ine(256x9)
+*HyperplaneOrder: LexMin
+*Degeneracy preknowledge for computation: None (possible degeneracy)
+*Hull computation is chosen.
+*Computation starts     at Wed Apr 19 16:34:00 1995
+*            terminates at Wed Apr 19 16:34:11 1995
+*Total processor time = 11 seconds
+*                     = 0h 0m 11s
+*Since hull computation is chosen, the output is a minimal inequality system
+*FINAL RESULT:
+*Number of Facets =16
+begin
+16  9  real
+ 0 0 0 0 0 0 0 0 1
+ 0 1 0 0 0 0 0 0 0
+ 0 0 1 0 0 0 0 0 0
+ 0 0 0 1 0 0 0 0 0
+ 0 0 0 0 1 0 0 0 0
+ 0 0 0 0 0 1 0 0 0
+ 0 0 0 0 0 0 1 0 0
+ 0 0 0 0 0 0 0 1 0
+ 1 0 0 0 0 0 0 0 -1
+ 1 0 0 0 0 0 0 -1 0
+ 1 0 0 0 0 0 -1 0 0
+ 1 0 0 0 0 -1 0 0 0
+ 1 0 0 0 -1 0 0 0 0
+ 1 0 0 -1 0 0 0 0 0
+ 1 0 -1 0 0 0 0 0 0
+ 1 -1 0 0 0 0 0 0 0
+end

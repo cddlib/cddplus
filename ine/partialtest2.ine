@@ -1,0 +1,22 @@
+file name: partialtest2.ine
+6 dimensional hypercube
+begin
+    12    7     integer
+ 0  1  0  0  0  0  0
+ 0  0  1  0  0  0  0
+ 0  0  0  1  0  0  0
+ 0  0  0  0  1  0  0
+ 0  0  0  0  0  1  0
+ 0  0  0  0  0  0  1
+ 1 -1  0  0  0  0  0
+ 1  0 -1  0  0  0  0
+ 1  0  0 -1  0  0  0
+ 1  0  0  0 -1  0  0
+ 1  0  0  0  0 -1  0
+ 1  0  0  0  0  0 -1
+end 
+equality
+ 2   1   12
+strict_inequality
+ 2   4    5 
+incidence  

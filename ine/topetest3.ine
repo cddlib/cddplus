@@ -1,0 +1,15 @@
+file: topetest3.ine
+The associated arrangement contains 
+73 topes (full-dimensional regions).
+begin
+    7    5    integer
+ 1  1  1  1  0 
+ 1  0  1  1  1 
+ 1  1  0  1  1 
+ 1  1  1  0  0
+ 1  0  0  1  0 
+ 1  0  1  0  1 
+ 1  1  0  0  1
+end
+tope_listing
+

@@ -1,0 +1,15 @@
+file name: topetest2.ine
+The associated arrangement of hyperplanes
+contains 24 topes (full-dimensional cells).
+begin
+    7   3    integer
+ -2    1   0
+  2    0  -1
+ -1    1   0
+ -1    0   1
+  4   -1  -1
+  1   -1   1
+  4   -5   5
+end
+tope_listing
+

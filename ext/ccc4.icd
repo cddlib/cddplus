@@ -1,0 +1,23 @@
+* cdd+: Double Description Method in C++:Version 0.72 (April 16, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
+*Incidences of output(=facets) and input (=points)
+*   for each output, #incidence and the set of points lying on it
+*   or its complement with its cardinality with minus sign
+*cdd input file : ccc4.ine  7  7
+*cdd output file: ccc4.ext
+begin
+12  7  7
+ -2 1 2
+ -2 1 3
+ -2 1 4
+ -2 4 7
+ -2 3 7
+ -2 2 7
+ -2 4 6
+ -2 3 6
+ -2 2 6
+ -2 4 5
+ -2 3 5
+ -2 2 5
+end
