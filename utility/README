@@ -1,0 +1,11 @@
+This directory contains the following utility codes:
+
+rlp.c
+  a random LP generator.
+
+voronoi.c and delaunay.c 
+  a converter of V-representation point data
+  to the Voronoi H-representation and the Delauanay V-representation.
+  See Fukuda's Polyhedral Computation FAQ.
+
+Komei Fukuda, Dec. 1, 1997

@@ -1,8 +1,9 @@
-file name: ccp7.ext
-Complete Cut Polytope on 7 vertices
-The number of facets is 116,764. 
-Needs very fast computer with lots of memory.
-It took 205 hours to compute on SparkServer 1000. 
+* file name: ccp7.ext
+* Complete Cut Polytope on 7 vertices
+* The number of facets is 116,764. 
+* Needs very fast computer with lots of memory.
+* It took 205 hours to compute on SparkServer 1000. 
+V-representation
 begin
   64  22   integer
 1   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0

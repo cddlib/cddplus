@@ -1,5 +1,6 @@
-File name: ibox200-4.ine
+File name: ibox200-4.ext
 Randomly generated 200 integral points in [-100..100]^3
+V-representation
 begin
   200   4   integer
   1     12    -49      2 
@@ -204,7 +205,4 @@ begin
   1    -31    -29    -23 
 end
 hull
-incidence
-adjacency
-maxcutoff
-
+*for backward compatibility safe to put "hull" option.

@@ -1,16 +1,16 @@
 /* cdddef.h:  Definition file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.74, June 17, 1996 
+   Version 0.75, November 30, 1997 
 */
 
-/* cdd.c : C-Implementation of the double description method for
+/* cdd.C : C-Implementation of the double description method for
    computing all vertices and extreme rays of the polyhedron 
    P= {x :  b - A x >= 0}.  
    Please read COPYING (GNU General Public Licence) and
    the manual cddman.tex for detail.
 */
 
-#define MMAX      5001  /* USER'S CHOICE: max row size of A plus one */
+#define MMAX      5002  /* USER'S CHOICE: max row size of A plus two */
 #define NMAX      101   /* USER'S CHOICE: max column size of A plus one */
 
 #define rowsetsize MMAX   /* The size of the column index set */

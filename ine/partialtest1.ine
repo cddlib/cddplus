@@ -1,6 +1,7 @@
-file name: partialtest1.ine
-6 dimensional hypercube
-equality option is equivalent to partial_enum option
+* file name: partialtest1.ine
+* 6 dimensional hypercube
+* equality option is equivalent to partial_enum option
+H-representation
 begin
     12    7     integer
  0  1  0  0  0  0  0

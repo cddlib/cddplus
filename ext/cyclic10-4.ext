@@ -1,5 +1,6 @@
-V-representation of 3-dim cyclic polytope with 10 vertices
-Number of facets (outputs) =16
+* 3-dim cyclic polytope with 10 vertices
+* Number of facets (outputs) =16
+V-representation
 begin
 10  4  integer
   1  1  1  1

@@ -1,5 +1,6 @@
-File name: infeas.ine
-The empty polytope. No vertices and rays.
+* File name: infeas.ine
+* The empty polytope. No vertices and rays.
+H-representation
 begin
     13   7     integer
  0  1  0  0  0  0  0

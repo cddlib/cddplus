@@ -1,5 +1,6 @@
-filename: nonfull.ine
-non fulll-dimensional polyhedron
+* filename: nonfull.ine
+* non fulll-dimensional polyhedron
+H-representation
 begin
     6      4    integer
   2   -1   0   0

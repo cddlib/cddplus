@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.74, June 17, 1996 
+   Version 0.75, November 30, 1997 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,7 +11,7 @@
 */
 
 #define COPYRIGHT   "Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.74 (June 17, 1996)"
+#define DDVERSION   "Version 0.75 (November 30, 1997)"
 
 #ifdef RATIONAL
 #define ARITHMETIC  "Compiled for Rational Exact Arithmetic"
@@ -170,6 +170,8 @@ extern time_t starttime, endtime;
 extern unsigned int rseed;
 
 extern myTYPE zero;    /*Rational or floating zero*/
+extern boolean Round_Output;    /* rounding option for floating-point output. */
+extern int output_digits;  /* Float digits for output.  Does not affect the computation. */
 
 void SetInputFile(boolean *);
 void SetWriteFileName(DataFileType, char, char *);
@@ -281,6 +283,7 @@ void SelectPreorderedNext(long *excluded, rowindex, rowrange *hnext);
 void AddNewHyperplane1(rowrange);
 void AddNewHyperplane2(rowrange);
 void WriteRunningMode(ostream &);
+void WriteRunningMode0(ostream &);
 void WriteRunningMode2(ostream &);
 void WriteCompletionStatus(ostream &);
 void WriteTimes(ostream &);

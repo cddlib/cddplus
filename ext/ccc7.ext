@@ -1,6 +1,7 @@
-file name: ccc7.ext
-Complete Cut Cone on 7 vertices
-The number of facets is 38,780.
+* file name: ccc7.ext
+* Complete Cut Cone on 7 vertices
+* The number of facets is 38,780.
+V-representation
 begin
   63  22  integer
 0   1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0

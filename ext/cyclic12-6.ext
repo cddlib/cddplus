@@ -1,5 +1,6 @@
-V-representation of 5-dim cyclic polytope with12 vertices
-Number of facets (outputs) =72
+* 5-dim cyclic polytope with12 vertices
+* Number of facets (outputs) =72
+V-representation
 begin
 12  6  integer
   1  1  1  1  1  1

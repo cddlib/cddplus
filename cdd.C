@@ -1,7 +1,7 @@
 /* cdd.C: Main program of the sofware cdd+
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.74, June 17, 1996 
-   Standard ftp site: ifor13.ethz.ch (129.132.154.13), Directory: pub/fukuda/cdd 
+   Version 0.75, November 30, 1997 
+   Standard ftp site: ftp.ifor.math.ethz.ch, Directory: pub/fukuda/cdd 
 */
 
 /* cdd+ : C++-Implementation of the double description method for
@@ -106,7 +106,9 @@ DataFileType inputfile,ifilehead,ifiletail,
 time_t starttime, endtime;
 unsigned int rseed=1;  /* random seed for random row permutation */
 
-myTYPE zero=ZERO;    /*Rational or floating zero*/
+myTYPE zero=ZERO;      /*Rational or floating zero*/
+boolean Round_Output;    /* rounding option for floating-point output. */
+int output_digits=OUTPUTDIGITS;  /* Float digits for output.  Does not affect the computation. */
 
 void DefaultOptionSetup(void)
 {
@@ -127,6 +129,7 @@ void DefaultOptionSetup(void)
   IncidenceOutput = IncOff;
   AdjacencyOutput = AdjOff;
   InitBasisAtBottom = False;
+  Round_Output=True;
 }
 
 void DDMain(ostream &f,ostream &f_log)
@@ -161,12 +164,13 @@ void DDMain(ostream &f,ostream &f_log)
   _L99:;
 }
 
-
-
 void Initialization(int ARGC, char *ARGV[])
 /* Initialization of global variables */
 {
+  long i;
+
   Error=None;
+
   CompStatus=InProgress;
   if (ARGC>1){
     FileInputMode=Auto;

@@ -1,7 +1,8 @@
 # Makefile for cdd+ compiler.
 
 # You must use GNU g++ compiler of version 2.6.0 or higher
-CC = /usr/local/bin/gcc
+CC = gcc
+#CC = /usr/local/bin/gcc
 #CC = /bin/cc
 
 # Location of g++-library archive file libg++.a
@@ -15,7 +16,7 @@ INCLUDEDIR = /usr/local/lib/g++-include
 # Compiler options
 #CFLAGS = -g -O -I$(INCLUDEDIR)
 #CFLAGS = -g -pg -O -I$(INCLUDEDIR)
-CFLAGS = -O -I$(INCLUDEDIR)
+CFLAGS = -O3 -I$(INCLUDEDIR)
 
 ########## You shouldn't have to change anything after this point ##########
 
@@ -55,10 +56,10 @@ cdd_r.o: cdd.C cdd.h cdddef.h cddtype.h cddrevs.h
 	$(CC) $(CFLAGS) -c -o cdd_r.o -DRATIONAL cdd.C
 
 cddr+: cdd_r.o cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o
-	$(CC) $(CFLAGS) $(LDFLAGS) cdd_r.o cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o -o cddr+ -lg++
+	$(CC) $(CFLAGS) $(LDFLAGS) cdd_r.o cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o -o cddr+ -lg++ -lstdc++
 
 cddf+: cdd.o cddrevs.o cddio.o cddarith.o cddpivot.o setoper.o
-	$(CC) $(CFLAGS) $(LDFLAGS) cdd.o cddrevs.o cddio.o cddarith.o cddpivot.o setoper.o -o cddf+ -lg++
+	$(CC) $(CFLAGS) $(LDFLAGS) cdd.o cddrevs.o cddio.o cddarith.o cddpivot.o setoper.o -o cddf+ -lg++ -lstdc++
 
 clean:
 	rm -rf core a.out cddf+ cddr+ *.o *~

@@ -1,5 +1,6 @@
-filename: vertextest.ext
-vertices are: 1 5 6 7 9 14 16 20 22 25 28 32 33 34 35 36 37 38 39 40 th rows 
+* filename: vertextest.ext
+* vertices are: 1 5 6 7 9 14 16 20 22 25 28 32 33 34 35 36 37 38 39 40 th rows 
+V-representation
 begin
    40  9   rational
  1 -1/1 -1/1 -1/1 -1/1 -1/1 -1/1 -1/1 -1/1

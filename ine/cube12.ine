@@ -1,4 +1,5 @@
-H-representation of 12-dim hypercube
+* 12-dim hypercube
+H-representation
 begin
    24  13  integer
   1  1  0  0  0  0  0  0  0  0  0  0  0

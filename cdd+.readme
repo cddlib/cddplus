@@ -1,6 +1,6 @@
-1996-06-17
+1997-11-30
 ---------------------------------------
-PROGRAM cdd+ (version 0.74) README FILE
+PROGRAM cdd+ (version 0.75) README FILE
 ---------------------------------------
 The program  cdd+  is a C++ implementation of the Double Description 
 Method of Motzkin et al. for generating all vertices (i.e. extreme points)
@@ -27,25 +27,21 @@ and g++-lib.  The program seems to be
 stable when compiled with gcc-2.6.3 and libg++-2.6.2, or
 more recent. 
 
-What's new in Version 0.74?
-(1) Some changes in default names for files.  In particular,
-it is now enforced to use the extension .ine for inequality files
-and .ext for extreme point/ray files to avoid confusion.
-(2) A faster LP code (dual simplex) for dense and tall LP's,
-say, several hundred thousands inequalities in 8 variables.
-(3) New options "vertex_listing" is added to remove
-redundancy in a set of points, which might be useful
-to do before computing the convex hull.   (Note that
-facet_listing was supported by the previous version.)
-(4) The floating-point executable cddf+ can now read rational
-data (p/q) and compute with floating-point arithmetic.
-(5) Some more, see cddman.tex.
+What's new in Version 0.75?
+The version 0.75 is a maintenance release which accepts
+an updated Polyhedra format with "H-representation" and
+"V-representation" statements.  Also, we added three additional
+options "zero_tolerance", "round_output_off" and 
+"output_digits".  The first one is to set a zero tolerance 
+of floating-point computation, and the latter ones are to 
+control the format of output numbers.
+See cddman.tex for details.
 
 The cdd+ package is in "tar"ed and "compress"ed format with name
 cdd+-***.tar.Z, where *** is the version number.  The standard
 anonymous ftp site for the package is
 
-     ftp site : ifor13.ethz.ch (129.132.154.13)
+     ftp site : ftp.ifor.math.ethz.ch
      directory: pub/fukuda/cdd
      file name: cdd+-***.tar.gz
 
@@ -126,8 +122,8 @@ for free software development is user's appreciation.
 For more information, contact
    Komei Fukuda
    fukuda@ifor.math.ethz.ch
-   Institut fur Operations Research 
-   ETH Zentrum, CH-8092 Zurich, Switzerland  
-   fax +41-1-632 1025   tel +41-1-632 4023 or 4028 
+   Zurich  :IFOR, ETH Zentrum, CH-8092 Zurich, Switzerland  
+   Lausanne:DMA, EPFL, Ch-1015 Lausanne, Switzerland
+   homepage: http://www.ifor.math.ethz.ch/staff/fukuda/fukuda.html
 
 // END of cdd+.readme 

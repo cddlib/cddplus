@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.74, June 17, 1996 
+   Version 0.75, November 30, 1997 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -282,8 +282,8 @@ void SetNumberType(string line)
 void ProcessCommandLine(ifstream &f, string line)
 {
   colrange j;
-  long var,msize;
-  myTYPE cost=0;
+  static long var,msize, outdig=-1;
+  myTYPE cost=0, zero_input=-1;
 
   if (debug) cout << line << "\n";
   if (line=="dynout_off") {
@@ -413,7 +413,7 @@ void ProcessCommandLine(ifstream &f, string line)
     }
     printf("\n");
     if (Conversion==Projection) {
-      printf("Warning: Partial Projection is cancelled because it cannot be compatible with Partial Enumeration.\n");
+      printf("Warning: Projection is cancelled because it cannot be compatible with Partial Enumeration.\n");
       Conversion=IneToExt;
     }
     RestrictedEnumeration=True;
@@ -427,7 +427,7 @@ void ProcessCommandLine(ifstream &f, string line)
     }
     printf("\n");
     if (Conversion==Projection) {
-      printf("Warning: Partial Projection is cancelled because it is not compatible with Partial Enumeration.\n");
+      printf("Warning: Projection is cancelled because it is not compatible with Partial Enumeration.\n");
       Conversion=IneToExt;
     }
     RelaxedEnumeration=True;
@@ -556,6 +556,33 @@ void ProcessCommandLine(ifstream &f, string line)
     SpecialConversion=RowDecomposition;
     return;
   }
+  if (line== "round_output_off" && Round_Output) {
+    if (DynamicWriteOn) printf("No rounding of output numbers.\n");
+    Round_Output=False;
+    return;
+  }
+  if (line== "zero_tolerance" && zero_input<0) {
+    (f) >> zero_input;
+    if (zero_input > 0){
+      zero=zero_input;
+      if (DynamicWriteOn)  cout << "zero_tolerance is reset to " << zero_input << ".\n";
+    } 
+    else cout << "Warning: float_zero must be positive. Use the default =" << zero
+      << ".\n";
+    return;
+  }
+  if (line== "output_digits" && outdig==-1) {
+    (f) >> outdig;
+    if (outdig > 0){
+      output_digits=outdig;
+      if (DynamicWriteOn) cout << "output_digits is reset to " << output_digits << ".\n";
+    } 
+    else {
+      if (DynamicWriteOn) cout << "Warning: output_digits must be >= 1. Use the default =" 
+      << output_digits << ".\n";
+    }
+    return;
+  }
 }
 
 
@@ -621,7 +648,7 @@ void WriteSubMatrixOfAA(ostream &f, rowset ChosenRow, colset ChosenCol,
 {
   long i,j;
 
-  (f) << "begin\n";
+  (f) << "H-representation\n" << "begin\n";
   if (ineq==ZeroRHS)
     (f) << "  " <<  set_card(ChosenRow)  << "  " << (set_card(ChosenCol)+1) << "  " << InputNumberString << "\n";
   else
@@ -670,26 +697,32 @@ void WriteAmatrix(ostream &f, Amatrix A, long rowmax, long colmax,
   (f) << "end\n";
 }
 
-
 void WriteNumber(ostream &f, myTYPE x)
 {
 #ifndef RATIONAL
-  long ix1,ix2,ix;
+  long ix1,ix2,ix, i;
+  static myTYPE sig=100000.;
 
-  ix1= (long) (FABS(x) * 10000. + 0.5);
-  ix2= (long) (FABS(x) + 0.5);
-  ix2= (long) (ix2*10000);
-  if ( ix1 == ix2) {
-    if (x>0) {
-      ix = (long) (x + 0.5);
+  if (Round_Output){
+    ix1= (long) (FABS(x) * sig + 0.5);
+    ix2= (long) (FABS(x) + 0.5);
+    ix2= (long) (ix2* (long)sig);
+    if (ix1 == ix2) {
+      if (x>0) {
+        ix = (long) (x + 0.5);
+      } else {
+        ix = (long) (-x + 0.5);
+        ix = -ix;
+      }
+      (f) << " " << ix;
     } else {
-      ix = (long) (-x + 0.5);
-      ix = -ix;
+      (f).setf(ios::scientific,ios::floatfield);
+      (f).precision(output_digits);
+      (f) << " " << x;
     }
-    (f) << " " << ix;
   } else {
     (f).setf(ios::scientific,ios::floatfield);
-    (f).precision(8);
+    (f).precision(output_digits);
     (f) << " " << x;
   }
 #else
@@ -1063,6 +1096,9 @@ void WriteRunningMode(ostream &f)
   if (PostAnalysisOn) {
     (f) << "*Post analysis is chosen.\n";
   }
+#ifndef RATIONAL
+  (f) << "*Zero tolerance = " << zero << "\n";
+#endif
 }
 
 void WriteRunningMode2(ostream &f)
@@ -1206,6 +1242,24 @@ void WriteRunningMode2(ostream &f)
   }
 }
 
+void WriteRunningMode0(ostream &f)
+{
+  switch (Conversion) {
+    case ExtToIne: case VertexListing: case VertexListingExternal:
+      (f) << "V-representation\n";
+      break;
+    
+    case IneToExt: case LPmax: case LPmin: case FacetListing: 
+    case FacetListingExternal: case TopeListing: case Projection:
+      (f) << "H-representation\n";
+      break;
+
+    default: break;
+  }
+}
+
+
+ 
 void WriteCompletionStatus(ostream &f)
 {
   if (Iteration<mm && CompStatus==AllFound) {
@@ -1616,22 +1670,22 @@ void WriteExtFile(ostream &f, ostream &f_log)
   if (Conversion == IneToExt) {
     if (Inequality==ZeroRHS && Conversion == IneToExt){
       (f)<< "*Number of Rays =" << FeasibleRayCount << "\n";
-      (f)<< "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n";
+      (f)<< "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n" <<"V-representation\n";
       if (DynamicWriteOn){
         cout << "*Number of Rays =" << FeasibleRayCount << "\n";
-        cout << "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n";
+        cout << "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n"<<"V-representation\n";
       }
     }else{
       if (DynamicWriteOn)
         cout << "*Number of Vertices =" << VertexCount << ", Rays =" 
-          << (FeasibleRayCount - VertexCount) << "\n";
+          << (FeasibleRayCount - VertexCount) << "\n" << "V-representation\n";
       (f)<< "*Number of Vertices =" << VertexCount << ", Rays =" 
-        << (FeasibleRayCount - VertexCount) << "\n";
+        << (FeasibleRayCount - VertexCount) << "\n" << "V-representation\n";
     }
   } else {
     if (DynamicWriteOn)
-      cout << "*Number of Facets =" << FeasibleRayCount << "\n";
-    (f)<< "*Number of Facets =" << FeasibleRayCount << "\n";
+      cout << "*Number of Facets =" << FeasibleRayCount << "\n" << "H-representation\n";
+    (f)<< "*Number of Facets =" << FeasibleRayCount << "\n" << "H-representation\n";
   }
   (f)<< "begin\n";
   switch (Inequality) {
@@ -1726,7 +1780,7 @@ void WriteProjResult(ostream &f, ostream &f_log, long *dbrow)
        <<  (FeasibleRayCount-VertexCount) << "\n";
   f << "*Number of Vertices =" << VertexCount << ",   Rays =" 
      <<  (FeasibleRayCount-VertexCount) << "\n";
-  f << "begin\n";
+  f << "V-representation\n" << "begin\n";
   f << " " << FeasibleRayCount << "  " << (mm+1) << " " << OutputNumberString <<"\n";
   TempPtr = FirstRay;
   while (TempPtr != NULL) {
@@ -1936,6 +1990,7 @@ void WriteSolvedProblem(ostream &f)
 {
   (f) << "*cdd input file : " << inputfile << "  ( " << minput << " x " << ninput << ")\n";
   (f) << "*The input data has been interpreted as the following.\n";
+  WriteRunningMode0(f);
   WriteAmatrix(f,AA,minput,nn,Inequality);
   WriteRunningMode2(f);
 }
@@ -1947,7 +2002,7 @@ void AmatrixInput(boolean *successful)
   myRational rvalue=0;
   myTYPE value=0;    // modified on 1996-02-18 
   long value1,value2;
-  boolean found=False,decided=False,fileopened, localdebug=False;
+  boolean found=False,decided=False,fileopened, newformat=False, localdebug=False;
   string numbtype, stemp; 
   char ch;
   string command="", inputst="";
@@ -1963,6 +2018,11 @@ void AmatrixInput(boolean *successful)
     while (!reading.eof() && inputst!="begin")
     {
       reading >> inputst;
+      if (inputst=="V-representation"){
+        Conversion = ExtToIne; newformat=True;
+      } else if (inputst=="H-representation"){
+          Conversion =IneToExt; newformat=True;
+      }
     }
     reading >> minput;
     reading >> ninput;

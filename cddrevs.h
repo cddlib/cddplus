@@ -1,6 +1,6 @@
 /* header file for cdd.C and cddrevs.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.74, June 17, 1996 
+   Version 0.75, November 30, 1997 
 */
 
 /* cdd.C : C++-Implementation of the double description method for

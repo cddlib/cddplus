@@ -1,5 +1,6 @@
-V-representation of 7-dim cyclic polytope with 14 vertices
-Number of facets (outputs) =240
+* 7-dim cyclic polytope with 14 vertices
+* Number of facets (outputs) =240
+V-representation
 begin
 14  8  integer
   1  1  1  1  1  1  1  1

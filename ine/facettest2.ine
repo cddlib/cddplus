@@ -1,5 +1,6 @@
-file name: facettest2.ine
-facet-defining inequalities are 1st, 5th and 7th
+* file name: facettest2.ine
+* facet-defining inequalities are 1st, 5th and 7th
+H-representation
 begin
     7   3    integer
  -2    1   0

@@ -1,4 +1,4 @@
-cdd & cdd+ HISTORY file    (as of June 17, 1996)
+cdd & cdd+ HISTORY file    (as of December 1, 1997)
 
 *** cdd version (date) / changes ***
 
@@ -198,6 +198,29 @@ Version C0.56 (August 7, 1995) /
    The output format of incidence file is slightly modified. (See
    the Reference Manual cddman.tex).
 
+Version 0.60 (August 27, 1996) /
+   The following changes are equivalent to ones that had been made
+   for cdd+-074.
+   The default output file names have been changed to be consistent
+   with the transformation.  To avoid confusion, *.ine file should
+   be used only for a system of linear inequalities, and *.ext file
+   only for a set of extreme points and rays.  Accordingly,
+   the files *.ead (previously *.adj) and *.ecd (previously *.icd)
+   are reserved for the adjacency and incidence files for the extremal
+   vertices/rays.   
+   Similarly, *.iad (previously *.iad) and *.icd (previously none)
+   are reserved for the adjacency and incidence files for the inequality
+   data.
+
+   The LP code is now independent of cdd, and rewritten as a C library.
+   This library is called dplex, and contains two algorithms,
+   the dual simplex and the criss-cross method.
+
+Version 0.61 (December 1, 1997) /
+   It accepts "H-representation" and "V-representation" statements
+   which are added to a Polyhedra format (1997).
+   dp_FindInteriorPoint is added to dplex.  Some small bugs are
+   fixed in dplex.
 
 *** cdd+ version (date) / changes ***
 
@@ -272,5 +295,12 @@ cdd+ Version 0.74beta2 (June 5, 1996) /
 
 cdd+ Version 0.74 (June 17, 1996) /
    Few minor bug fixes were made.
+
+cdd+ Version 0.75 (November 30, 1997) /
+   This is a maintenance update of the previous version to employ the 
+   new 1997 Polyhedra format (introducing H-representation and
+   V-representation statements).  Three options for accuracy control
+   is added: "zero_tolerance", "round_output_off" and "output_digits".
+   
 
 --- end of file: cddHISTORY ---

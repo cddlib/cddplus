@@ -1,4 +1,5 @@
-H-representation of 16-dim hypercube
+* 16-dim hypercube
+H-representation
 begin
    32  17  integer
   1  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0

@@ -16,7 +16,8 @@ BEGIN {
 			getline line <fname
 		}
 		getline dim <fname; split(dim,dvec);
-	 	printf("begin\n");printf("   ******** %s  %s\n", dvec[2], dvec[3])
+	 	printf("V-representation\nbegin\n");
+		printf("   ******** %s  %s\n", dvec[2], dvec[3])
 	}
   }
   if (fopen && skip==0) {

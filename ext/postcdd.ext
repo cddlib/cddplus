@@ -1,12 +1,13 @@
-file name: postcdd.ine
-This file is the same as ccc6.ext 
-except for options.  This file is 
-to illustrate how "postanalysis" option can be used
-to generate adjacency and incidence files
-after ccc6.ine is generated.  
-Obtain ccc6.ine first by running cddf+ with ccc6.ext, and 
-rename this file as ccc6.ext.  Then run  
-cddf+ again with this ccc6.ext.
+* file name: postcdd.ine
+* This file is the same as ccc6.ext 
+* except for options.  This file is 
+* to illustrate how "postanalysis" option can be used
+* to generate adjacency and incidence files
+* after ccc6.ine is generated.  
+* Obtain ccc6.ine first by running cddf+ with ccc6.ext, and 
+* rename this file as ccc6.ext.  Then run  
+* cddf+ again with this ccc6.ext.
+V-representation
 begin
   31  16   integer
 0   1 1 1 1 1 0 0 0 0 0 0 0 0 0 0

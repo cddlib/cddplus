@@ -1,6 +1,7 @@
-V-representation of 9-dim cyclic polytope with 16 vertices
-Number of facets (outputs) =660
-This must be computed with exact arithmetic
+* 9-dim cyclic polytope with 16 vertices
+* Number of facets (outputs) =660
+* This must be computed with exact arithmetic
+V-representation
 begin
 16  10  integer 
   1  1  1  1  1  1  1  1  1  1

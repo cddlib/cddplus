@@ -1,5 +1,6 @@
-kkd18_4.ine
-This must be computed with rational arithmetic.
+* kkd18_4.ine
+* This must be computed with rational arithmetic.
+H-representation
 begin
 18   5   integer
 3976210973720   -5964591245895   -33802508475500   -161110322828670   

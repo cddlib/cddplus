@@ -1,10 +1,11 @@
-Filename: mit729-9.ine
-Ternary Alloy Ground State Analysis
-  See, Ceder, G., Garbulski, G.D.,  Avis, D. and Fukuda, K., 
-  "Ground states of a ternary lattice model with nearest
-  and next-nearest neighbor interactions," preprint,
-  Physical Review B, to appear in Jan. 1994.
-This polytope has 4862 vertices.  
+* filename: mit729-9.ine
+* Ternary Alloy Ground State Analysis
+* See, Ceder, G., Garbulski, G.D.,  Avis, D. and Fukuda, K., 
+* "Ground states of a ternary lattice model with nearest
+* and next-nearest neighbor interactions," preprint,
+* Physical Review B, to appear in Jan. 1994.
+* This polytope has 4862 vertices.  
+H-representation
 begin 
    729    9    integer
    12     2     0     0     0     0    -3     0     0 

@@ -1,6 +1,7 @@
-The vertices of a self-dual 4-dim regular polytope
-with 24 octahedron facets.  
-We use hull option to compute all (24) facet inequalities.
+* The vertices of a self-dual 4-dim regular polytope
+* with 24 octahedron facets.  
+* We use hull option to compute all (24) facet inequalities.
+V-representation
 begin
   24  5  integer
  1  1  1  1  1

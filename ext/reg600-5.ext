@@ -1,6 +1,7 @@
-filename: reg600-5.ine
-The vertices of a 4-dim regular polytope with 600 vertices.
-Hull computation for finding all 120 facets.
+* filename: reg600-5.ine
+* The vertices of a 4-dim regular polytope with 600 vertices.
+* Hull computation for finding all 120 facets.
+V-representation
 begin
  600 5 real 
  1 -2. -2. 0 0

@@ -1,5 +1,6 @@
-file name: ucube.ine
-3 cube without one "lid"
+* file name: ucube.ine
+* 3 cube without one "lid"
+H-representation
 begin
     6      4    integer
   2   -1   0   0
