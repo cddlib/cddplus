@@ -3,8 +3,8 @@
 \bibitem[ABS97]{abs-hgach-97}
 D.~Avis, D.~Bremner, and R.~Seidel.
 \newblock How good are convex hull algorithms.
-\newblock {\em Computational Geometry: Theory and Applications},
-  7(5--6):265--301, 1997.
+\newblock {\em Computational Geometry: Theory and Applications}, 7:265--302,
+  1997.
 
 \bibitem[AF92]{af-pachv-92}
 D.~Avis and K.~Fukuda.
@@ -81,8 +81,9 @@ K.~Fukuda and A.~Prodon.
 \newblock In M.~Deza, R.~Euler, and I.~Manoussakis, editors, {\em Combinatorics
   and Computer Science}, volume 1120 of {\em Lecture Notes in Computer
   Science}, pages 91--111. Springer-Verlag, 1996.
-\newblock ps file available from ftp.ifor.math.ethz.ch, directory
-  /pub/fukuda/reports.
+\newblock ps file available from
+  \htmladdnormallink{ftp://ftp.ifor.math.ethz.ch/pub/fukuda/reports/ddrev96031%
+5.ps.gz}{ftp://ftp.ifor.math.ethz.ch/pub/fukuda/reports/ddrev960315.ps.gz}.
 
 \bibitem[Fuk97]{f-pcfaq-97}
 K.~Fukuda.

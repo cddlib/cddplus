@@ -1,19 +1,17 @@
-# Makefile for cdd+ compilation.
+# Makefile for cdd+ compilation with gcc-2.8.*.
 
-# You must use GNU g++ compiler of version 2.6.* or 2.7.*. 
-# For gcc-2.8.* or higher, use Makefile.2.8 instead.
+# You must use GNU g++ compiler of version 2.8.0 or higher
+# Use Makefile.2.7 when your compiler is older than gcc-2.8.0.
 
 CC = gcc
 #CC = /usr/local/bin/gcc
 #CC = /bin/cc
 
-# Location of g++-library archive file libg++.a
-#LIBDIR = /usr/lib
+# Location of g++-library archive file libg++.a.  
 LIBDIR = /usr/local/lib 
 
-# Location of g++-library include files
-#INCLUDEDIR = /usr/include/g++
-INCLUDEDIR = /usr/local/lib/g++-include 
+# Location of g++-library include files.  
+INCLUDEDIR = /usr/local/include/g++
 
 # Compiler options
 #CFLAGS = -g -O -I$(INCLUDEDIR)

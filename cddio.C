@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75, November 30, 1997 
+   Version 0.75a, September 29, 1998 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -283,7 +283,7 @@ void ProcessCommandLine(ifstream &f, string line)
 {
   colrange j;
   static long var,msize, outdig=-1;
-  myTYPE cost=0, zero_input=-1;
+  myTYPE cost=0, zero_input=-1, purezero=0;
 
   if (debug) cout << line << "\n";
   if (line=="dynout_off") {
@@ -561,9 +561,9 @@ void ProcessCommandLine(ifstream &f, string line)
     Round_Output=False;
     return;
   }
-  if (line== "zero_tolerance" && zero_input<0) {
+  if (line== "zero_tolerance" && zero_input<purezero) {
     (f) >> zero_input;
-    if (zero_input > 0){
+    if (zero_input > purezero){
       zero=zero_input;
       if (DynamicWriteOn)  cout << "zero_tolerance is reset to " << zero_input << ".\n";
     } 

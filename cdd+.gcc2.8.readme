@@ -1,0 +1,10 @@
+The cdd+ version 075 was written for gcc-2.7.2, and it has a little
+problem when it is compiled with gcc-2.8.*.   
+
+The revised distribution cdd+-075a of cdd+075 contains a revised
+version of cddio.C which enables gcc-2.8.* to compile correctly.
+Make sure that a compatible libg++, for example, libg++-2.8.1.1a
+is installed correctly as well as gcc-2.8.* (or egcs-1.0.*).
+
+Komei Fukuda 
+Sept. 29, 1998 
