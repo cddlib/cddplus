@@ -1,6 +1,6 @@
 /* cddpivot.C:  Pivoting Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75, November 30, 1997 
+   Version 0.76, March 17, 1999 
 */
 
 /* cdd.c : C-Implementation of the double description method for
@@ -10,8 +10,8 @@
    the manual cddman.tex for detail.
 */
 
-#include <fstream.h>
-#include <strclass.h>
+#include <fstream>
+#include <string>
 #include "cddtype.h"
 #include "cddrevs.h"
 
@@ -1334,7 +1334,8 @@ When LP is dual-inconsistent then *se returns the evidence column.
           sublp_size = i;
         }else{
           if (ShowSignTableauOn){
-            if (nn <= 11) WriteSignAmatrix(cout,SA,OrderVec, BasisFlag, OBJrow, RHScol);
+            WriteSignAmatrix(cout,SA,OrderVec, BasisFlag, OBJrow, RHScol);
+            WriteDictionary(cout, A1, BasisInverse, OrderVec, BasisFlag, NBIndex, OBJrow, RHScol);
             WriteLvector(cout,OrderVec,L);
           }
         } 
@@ -1411,6 +1412,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
           WriteSignAmatrix(cout,SA,OrderVec, BasisFlag, OBJrow, RHScol);
         }else{
           WriteSignTableau(cout,A1,BasisInverse,OrderVec, BasisFlag, OBJrow, RHScol);
+          WriteDictionary(cout, A1, BasisInverse, OrderVec, BasisFlag, NBIndex, OBJrow, RHScol);
         }
         WriteLvector(cout, OrderVec, L);
       }
@@ -1581,6 +1583,7 @@ _L88:
   stop=False;
   if (ShowSignTableauOn){
     WriteSignTableau(cout, A1, BasisInverse, OrderVector, BasisFlag, OBJrow, RHScol);
+    WriteDictionary(cout, A1, BasisInverse, OrderVector, BasisFlag, NBIndex, OBJrow, RHScol);
   }
 
   FindDualFeasibleBasis(A1, BasisInverse, Basis, Cobasis, OrderVector, NBIndex,BasisFlag,
@@ -1632,6 +1635,7 @@ _L88:
         (*iter)++;
         if (ShowSignTableauOn){ 
           WriteCurrentSolution(cout, A1, BasisInverse, OBJrow, RHScol, NBIndex);
+          WriteDictionary(cout, A1, BasisInverse, OrderVector, BasisFlag, NBIndex, OBJrow, RHScol);
           cout << "Pivot on (" << leaving << ", " << entering << ")\n";
         }
       } else {
@@ -1778,6 +1782,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
   SetSignAmatrix(SA,A1,BasisInverse);
   if (ShowSignTableauOn){
     WriteSignAmatrix(cout,SA,OrderVec, BasisFlag, OBJrow, RHScol);
+    WriteDictionary(cout, A1, BasisInverse, OrderVec, BasisFlag, NBIndex, OBJrow, RHScol);
   }
   do {   /* Manual Povot */
     chosen=False;
@@ -1808,6 +1813,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
       cout << "Pivot on (" << leaving << ", " << entering << ")\n";
       // f_log << "cobasis: "; set_fwrite(f_log,Cobasis); f_log << "\n";
       WriteSignAmatrix(cout,SA,OrderVec, BasisFlag, OBJrow, RHScol);
+      WriteDictionary(cout, A1, BasisInverse, OrderVec, BasisFlag, NBIndex, OBJrow, RHScol);
     }
   } while(!stop);
 }

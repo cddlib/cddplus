@@ -1,6 +1,6 @@
 /* cddrevs.C:  Reverse Search Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75, November 30, 1997 
+   Version 0.76, March 17, 1999 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -10,8 +10,8 @@
    the manual cddman.tex for detail.
 */
 
-#include <fstream.h>
-#include <strclass.h>
+#include <fstream>
+#include <string>
 #include "cddtype.h"
 #include "cddrevs.h"
 

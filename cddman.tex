@@ -1,7 +1,7 @@
 % The name of this file: cddman.tex
 % written by by Komei Fukuda
 % December 14, 1993
-% Revised December 1, 1997
+% Revised March 17, 1999
 %
 \documentclass[11pt]{article}
 \usepackage{html}
@@ -9,8 +9,8 @@
 \renewcommand{\arraystretch}{1}
 \setlength{\oddsidemargin}{8mm}
 \setlength{\textwidth}{16cm}
-\setlength{\topmargin}{-5mm}
-\setlength{\textheight}{240mm}
+\setlength{\topmargin}{-15mm}
+\setlength{\textheight}{235mm}
 %\setlength{\headsep}{0in}
 %\setlength{\headheight}{0pt}
 \pagestyle{plain}
@@ -24,32 +24,31 @@ ETH-Zentrum, CH-8092 Zurich, Switzerland\\
 fukuda@ifor.math.ethz.ch \\and\\
 Department of Mathematics\\
 ETFL, CH-1015 Lausanne, Switzerland}
-\date{ (cdd ver. 0.61 and cdd+ ver. 0.75,  December 1, 1997)}
+\date{ (cdd ver. 0.61 and cdd+ ver. 0.76,  March 17, 1999)}
 
 \maketitle
 
 \section{What's new?}
-If you are a new user of cdd/cdd+ please read Section \ref{INTRODUCTION} (Introduction) first.
 
-Both cdd+-075 and cdd-061 are a sort of maintenance releases which accept
-an updated Polyhedra format with  ``{\bf H-representation}'' and 
-``{\bf V-representation}'' statements.   This is to make a better
-compatibility with a recent release (version 3.2) of David Avis's code lrs \cite{a-uglrs-97}.
-
-Also, we added three additional options ``zero\_tolerance'',
-``round\_output\_off'' and ``output\_digits'', to cdd+-075.  
-The first one is to set a zero tolerance of floating-point computation,
-and the latter ones are to control the format of
-output numbers.
-
-Note that I have newly created a document \cite{f-pcfaq-97}, 
-called {\bf Polyhedral Computation FAQ},  which is to help the cdd/cdd+ users
-to make an efficient and appropriate use 
-of polyhedral computations.
-In particular, the document explains how one
-can compute the Voronoi diagrams, the Delaunay
-complex (triangulation), using programs like cdd+
-and lrs \cite{a-uglrs-97}.
+Thanks to TU-Berlin's Polymake Team, cdd+ now runs with GNU's
+GMP rational library as well as with the GNU g++ Rational library.
+In particular, Polymake Team (Ewgenij Gawrilow and Michael Joswig)
+wrote C++ wrappers "gmp\_integer.cc" and "gmp\_rational.cc" for GMP 
+which cdd+ can now use instead of GNU's G++ Rational arithmetic library.
+ 
+Since cdd+ with GMP runs substantially faster 
+than cddr+ with g++Rational, any cdd+ user who needs exact arithmetic
+computation is strongly recommended to use the GMP version.
+One should be also aware that GMP-2.0.2 has known bugs and
+all the patches available from GMP-Homepage 
+(\htmladdnormallink{http://www.matematik.su.se/~tege/gmp/}
+{http://www.matematik.su.se/~tege/gmp/})
+ should be applied first.
+Even with all these troubles, its speed compensates them easily.
+How much faster?  It all depends on your data.  For kkd* polytopes
+included in cdd+, cddr+\_gmp runs three to ten times faster than
+cddr+\_g++.  For less complicated polytopes, the speedup might be modest
+but one can expect the gmp version runs always faster.
 
 \section{Introduction} \label{INTRODUCTION}
 
@@ -294,16 +293,16 @@ input_incidence
 The meaning of options ``incidence'', ``adjacency''
 ``input\_adjacency'' and ``input\_incidence'' 
 will be explained in Section~\ref{OPTIONS}.
-After you run cddf+ (the floating-arithmetic version of cdd+) 
+After you run cddr+ (the rational arithmetic version of cdd+) or cddf+
 with this input file, you will get
 an output file ucube.ext  which is the minimal V-representation
 of the polyhedron:
 
 \begin{verbatim}
-* cdd+: Double Description Method in C++:Version 0.75 (November 30, 1997)
-* Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch
-* Compiled for Floating-Point Arithmetic
-*Input File:ucube.ine(6x4)
+* cdd+: Double Description Method in C++:Version 0.76 (March 17, 1999)
+* Copyright (C) 1999, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Rational Exact Arithmetic with GMP
+*Input File:ine/ucube.ine(6x4)
 *HyperplaneOrder: LexMin
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Vertex/Ray enumeration is chosen.
@@ -311,17 +310,16 @@ of the polyhedron:
 *Input adjacency file is requested.
 *Output incidence file is requested
 *Input incidence file is requested.
-*Zero tolerance = 1e-06
 *Computation completed at Iteration 6.
-*Computation starts     at Sun Nov 30 18:18:09 1997
-*            terminates at Sun Nov 30 18:18:09 1997
+*Computation starts     at Wed Mar 17 06:56:51 1999
+*            terminates at Wed Mar 17 06:56:51 1999
 *Total processor time = 0 seconds
 *                     = 0h 0m 0s
 *FINAL RESULT:
 *Number of Vertices =4, Rays =1
 V-representation
 begin
-5  4  real
+5  4  rational
  1 2 1 1
  1 1 1 1
  1 1 2 1
@@ -342,20 +340,20 @@ Now, if you run cdd+ with this output file ucube.ext,
 cdd+ will perform the convex hull operation to recover 
 essentially the original inequalities.  More precisely, if
 we make a copy ucube2.ext of ucube.ext, and run
-cddf+ with this copy, cddf+ will create a new ucube2.ine file:
+cddr+ (or cddf+) with this copy, it will create a new ucube2.ine file:
 
 \begin{verbatim}
-* cdd+: Double Description Method in C++:Version 0.75 (November 30, 1997)
-* Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch
-* Compiled for Floating-Point Arithmetic
+* cdd+: Double Description Method in C++:Version 0.76 (March 17, 1999)
+* Copyright (C) 1999, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Rational Exact Arithmetic with GMP
 *Input File:ucube2.ext(5x4)
 .
 .
 .
-*Number of Facets =5
+*Number of Facets = 5
 H-representation
 begin
-5  4  real
+5  4  rational
  -1 0 1 0
  -1 1 0 0
  2 0 -1 0
@@ -782,8 +780,9 @@ determines a tope.   This option should be used only in H-representation
 (*.ine) files, and the output filename is ``*.tis''.
 
 
-\item[partial\_enumeration, equality, strict\_inequality] options\\
-With partial\_enumeration option (or equivalently equality option), 
+\item[partial\_enumeration, equality, linearity, strict\_inequality] options\\
+With partial\_enumeration option 
+(or equivalently equality or linearity options), 
 one can enumerate only those
 vertices and rays that are lying on the set of hyperplanes
 associated with specified inequality numbers. If you want
@@ -941,7 +940,6 @@ which are stored in subdirectories {\bf ine} and {\bf ext}.
 \item[(1)] [Files and Compilation] The source files for distribution are
 
 \begin{tabular}{ll}
-     cdd.readme  &  cdd readme file\\
      cdd.c       &   C main source file\\
      cddarith.c  &   C sub source file\\  
      cddio.c     &   C sub source file\\  
@@ -954,8 +952,9 @@ which are stored in subdirectories {\bf ine} and {\bf ext}.
      setoper.c   &   C library for set operation\\
      setoper.h   &   header file for setoper.c \\
      cddman.tex  &  Latex source of this manual itself\\
-     Makefile    &   GNU make file\\
-     cddHISTORY  &   brief description of changes made at each updates\\
+     makefile    &  makefile for cdd+ compilation\\
+     HISTORY.cdd  &   brief description of changes made at each updates\\
+     README.cdd+  &  cdd+ readme file\\
      ine         &   A subdirectory containing sample inequality files\\
      ext         &   A subdirectory containing sample points files for hull computation\\
      COPYING     &   GNU GENERAL PUBLIC LICENSE
@@ -1030,20 +1029,26 @@ to, say 2001 and 51.
      cddHISTORY  & brief description of changes made at each updates\\
      ine         & A subdirectory containing sample inequality input  files\\
      ext         & A subdirectory containing sample point/ray input files\\
-     Makefile    & gcc-2.7.* makefile for cddf+ and cddr+\\
+     makefile    & gcc-2.8.* makefile for cddf+ and cddr+\\
      get\_essential  & gawk script for facet\_listing and vertex\_listing \\
+     gmp\_integer.cc  &  Polymake's GMP wrapper in C++\\
+     gmp\_rational.cc &  Polymake's GMP wrapper in C++\\
      COPYING     & GNU GENERAL PUBLIC LICENSE\\
 \end{tabular}
 
 \noindent
-For compilation of cdd+, one needs a recent (2.6.0 or higher) gcc compiler
-and g++-library.   Once gcc and g++-library are installed, 
-please edit Makefile according to the setup of a GNU gcc compiler and g++-library,
+For compilation of cdd+, one needs either GNU's GMP (libgmp.a)  or GNU's 
+g++ Rational library (libg++.a) .   It is strongly recommended to use GMP since
+it runs much faster.  Note that libg++ is not supported by GNU any more.
+Also try to use a recent GNU's C++ compiler (gcc-2.8.* or higher).
+Most likely you have to edit makefile according to 
+the setup of a GNU gcc compiler, GMP or g++-library,
  and type
 \begin{verbatim}
    % make all
 \end{verbatim}
-which creates two executables, cddr+ and cddf+.  The executable
+which creates two executables, cddr+ (either cddr+\_gmp or cddr+\_g++)
+ and cddf+.  The executable
 cddr+ computes with rational (exact arithmetic) and cddf+ computes
 with floating-point arithmetic.  If you want to create only one of
 them, use ''make cddf+'' or ''make cddr+''.  Once these executables are 
@@ -1056,8 +1061,6 @@ We experienced some problems with older versions of gcc.    Also, be aware that
 gcc and g++-library that come with NEXTSTEP 3.2 have bugs in the Rational library.
 Please use gcc and g++lib on the newest version NEXTSTEP 3.3, or build a recent
 gcc and g++library on older systems.
-Generally, cdd+ seems to be most stable when compiled with gcc-2.6.3 or higher 
-with compatible libg++. 
 
 Note that cddr+ reads Polyhedra data in integer or rational
 number type, while cddf+ reads data in integer, rational and real number type.
@@ -1083,8 +1086,11 @@ Unlike the pascal version pdd, one can set the size MMAX as large as one
 wants.  It is no more restricted by the SET TYPE element sizes of 
 usual Pascal compilers.
 
-\item[(3)] [TURBO/THINK C Users]   Since cdd+ uses the GNU gcc libraries,
-it cannot be compiled with other compilers.  Use  the ANSI C program cdd
+\item[(3)] [Windows/Mac Users]  In principle, cdd+ with GMP can
+be compiled on any platform that allows GMP  and comes 
+with modern C++ compilers with STL.
+Yet, I have no experiences.  You might also want to try
+the ANSI C program cdd and cddlib
 instead which can be found in the same ftp site as cdd+.
 \end{itemize}
 
@@ -1182,19 +1188,18 @@ of the Fourier-Motzkin elimination).
 
 
 \section*{Acknowledgements.} 
-I am  grateful to Th. M. Liebling (EPFL, Switzerland)  who
-provided me with an ideal opportunity to visit the department
+I am  grateful to Th. M. Liebling who
+provided me with an ideal opportunity to visit EPFL
 for the academic year 1993-1994.  Without his 
-generous help and encouragement,
-the present form of this program would not have existed.
+support, the present form of this program would not have existed.
 There are many people who helped me to improve cdd,  in particular,
 I am indebted to David Avis, Alain Prodon,  Francois Margot, Henry Crapo,
-Alexander Bockmayr, David Bremner, Matthew Saltzman. 
+Alexander Bockmayr, David Bremner, Matthew Saltzman, Ewgenij Gawrilow and
+Michael Joswig.
 
-Finally, but not least, I would like to thank H.-J. L\"uthi
-(ETH Zurich) who has made the current new development (cdd+)
-possible.  Some important new features, including the exact computation
-and the tope listing, have been added to cdd+ with his support.
+Finally, I would like to thank both H.-J. L\"uthi (ETHZ)
+ and Th. M. Liebling (EPFL) for their continuing support for 
+the current new development (cdd+, cddlib).  
 
 \bibliographystyle{alpha}
 

@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75a, September 29, 1998 
+   Version 0.76, March 17, 1999
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -10,9 +10,10 @@
    the manual cddman.tex for detail.
 */
 
-#include <fstream.h>
+#include <fstream>
 #include <libc.h>
-#include <strclass.h>
+#include <string>
+//#include <strclass.h>
 #include "cddtype.h"
 #include "cddrevs.h"
 
@@ -404,7 +405,7 @@ void ProcessCommandLine(ifstream &f, string line)
     debug = True;
     return;
   }
-  if ((line== "partial_enumeration" || line=="equality") 
+  if ((line== "partial_enumeration" || line=="equality" || line=="linearity") 
     && RestrictedEnumeration==False) {
     (f) >> msize;
     for (j=1;j<=msize;j++) {
@@ -872,6 +873,59 @@ void WriteSignTableau(ostream &f, Amatrix X, Bmatrix T,
     }
   }
   (f) << "\n";
+}
+
+void WriteDictionary(ostream &f, Amatrix X, Bmatrix T,
+ rowindex OV, long bflag[], colindex nbindex, rowrange objrow, colrange rhscol)
+/* Write the sign matrix of tableau  X.T.
+   This works properly only for Nonhomogeneous inequality  */
+{
+  colrange j;
+  rowrange i,k,l;
+  
+  (f) << "\\multicolumn{2}{r}{g}";
+  for (j=2; j<= nn; j++) {
+    (f).width(3);
+    (f) << "&\\multicolumn{1}{r}{" << nbindex[j]<< "}\n";
+  }
+  (f) << "\\\\ \\cline{2-"<< (nn+1) << "}\n";
+  (f) << "     g|";
+  for (j=2; j<= nn; j++) {
+    (f).width(3);
+    (f) << " " << nbindex[j];
+  }
+  (f) << "\\\\\n";
+  for (i=1; i<= mm; i++) {
+    if (bflag[i]==0) {  /* i the objective variable */
+      (f) << "   f";
+      (f) << " &" << TableauEntry(X,T,i,1) << " ";   
+      for (j=2; j<= nn; j++) {
+        (f).width(3);
+        (f) << "&" << TableauEntry(X,T,i,j);
+      }
+      (f) << "\\\\ \\cline{2-" << (nn+1) << "}\n";
+    }
+  }
+  (f) << "  -----+";
+  for (j=2; j<=nn; j++) { 
+    (f) << "-----";
+  }
+  (f) << "\\\\\n";
+  for (i=1; i<= mm; i++) {
+    if (bflag[i]!=0 && bflag[i]==-1) {  /* i is a basic variable */
+      (f).width(2); 
+      (f) << " " << i;   
+      (f).width(3);
+      (f) << "&" << TableauEntry(X,T,i,1) << " ";   
+      for (j=2; j<= nn; j++) {
+        (f).width(3);
+        (f) << "&" << TableauEntry(X,T,i,j);
+      }
+      (f) << "\\\\\n";
+    }
+  }
+  (f) << "\\cline{2-" << (nn+1) << "}\n";
+  (f) << "\\multicolumn{" << nn+1 << "}{r}{}\\\\\n";
 }
 
 void WriteBmatrix(ostream &f, Bmatrix T)
@@ -1669,23 +1723,23 @@ void WriteExtFile(ostream &f, ostream &f_log)
     printf("*Computation complete.\n");
   if (Conversion == IneToExt) {
     if (Inequality==ZeroRHS && Conversion == IneToExt){
-      (f)<< "*Number of Rays =" << FeasibleRayCount << "\n";
+      (f)<< "*Number of Rays = " << FeasibleRayCount << "\n";
       (f)<< "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n" <<"V-representation\n";
       if (DynamicWriteOn){
-        cout << "*Number of Rays =" << FeasibleRayCount << "\n";
+        cout << "*Number of Rays = " << FeasibleRayCount << "\n";
         cout << "*Caution!: the origin is a vertex, but cdd does not output this trivial vertex\n"<<"V-representation\n";
       }
     }else{
       if (DynamicWriteOn)
-        cout << "*Number of Vertices =" << VertexCount << ", Rays =" 
+        cout << "*Number of Vertices = " << VertexCount << ", Rays =" 
           << (FeasibleRayCount - VertexCount) << "\n" << "V-representation\n";
       (f)<< "*Number of Vertices =" << VertexCount << ", Rays =" 
         << (FeasibleRayCount - VertexCount) << "\n" << "V-representation\n";
     }
   } else {
     if (DynamicWriteOn)
-      cout << "*Number of Facets =" << FeasibleRayCount << "\n" << "H-representation\n";
-    (f)<< "*Number of Facets =" << FeasibleRayCount << "\n" << "H-representation\n";
+      cout << "*Number of Facets = " << FeasibleRayCount << "\n" << "H-representation\n";
+    (f)<< "*Number of Facets = " << FeasibleRayCount << "\n" << "H-representation\n";
   }
   (f)<< "begin\n";
   switch (Inequality) {
@@ -2257,7 +2311,7 @@ void ReadExtFile(ifstream &f)
     }
     else {
       f >> command;
-      if (strncmp(command, "begin", 5)==0) {
+      if (command=="begin") {
         found=True;
       }
     }

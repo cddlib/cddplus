@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75, November 30, 1997 
+   Version 0.76, March 17, 1999 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -10,11 +10,15 @@
    the manual cddman.tex for detail.
 */
 
-#define COPYRIGHT   "Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.75 (November 30, 1997)"
+#define COPYRIGHT   "Copyright (C) 1999, Komei Fukuda, fukuda@ifor.math.ethz.ch"
+#define DDVERSION   "Version 0.76 (March 17, 1999)"
 
 #ifdef RATIONAL
-#define ARITHMETIC  "Compiled for Rational Exact Arithmetic"
+ #ifdef GMP
+ #define ARITHMETIC  "Compiled for Rational Exact Arithmetic with GMP"
+ #else
+ #define ARITHMETIC  "Compiled for Rational Exact Arithmetic with G++"
+ #endif
 #else
 #define ARITHMETIC  "Compiled for Floating-Point Arithmetic"
 #endif
@@ -208,6 +212,8 @@ void WriteSignAmatrix(ostream &f, SignAmatrix X,
   rowindex OV, long bflag[], rowrange objrow, colrange rhscol);
 void WriteSignTableau(ostream &f, Amatrix X, Bmatrix T,
   rowindex OV, long bflag[], rowrange objrow, colrange rhscol);
+void WriteDictionary(ostream &f, Amatrix X, Bmatrix T,
+  rowindex OV, long bflag[], colindex NBIndex, rowrange objrow, colrange rhscol);
 void OutputTableau(Amatrix, Bmatrix T,InequalityType);
 void SelectPivot2(Amatrix, Bmatrix T,
    HyperplaneOrderType,rowrange, rowset, colset,

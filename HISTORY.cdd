@@ -1,4 +1,15 @@
-cdd & cdd+ HISTORY file    (as of December 1, 1997)
+libcdd, cdd & cdd+ HISTORY file    (as of March 17, 1999)
+
+*** libcdd version (date) / changes ***
+
+Version 080 (March 24, 1999) /
+ - The first C-library version of cdd.  It is stilll very primitive
+   and has no documentation.  See README.libcdd.   Unlike the existing
+   versions of cdd/cdd+, cddlib can deal with essentially any input,
+   namely, non-full-dimensional convex hull problems and 
+   vertex-free extreme point (i.e. generator) listing problems.  Also
+   it comes with MathLink program cddmathlink that can be called from
+   Mathematica to perform cdd operations.
 
 *** cdd version (date) / changes ***
 
@@ -222,6 +233,10 @@ Version 0.61 (December 1, 1997) /
    dp_FindInteriorPoint is added to dplex.  Some small bugs are
    fixed in dplex.
 
+Version 0.61a (December, 1997) /
+   Few minor corrections over 0.61.
+
+
 *** cdd+ version (date) / changes ***
 
 cdd+ Version 0.70 (April 3, 1995) /
@@ -302,5 +317,10 @@ cdd+ Version 0.75 (November 30, 1997) /
    V-representation statements).  Three options for accuracy control
    is added: "zero_tolerance", "round_output_off" and "output_digits".
    
+cdd+ Version 0.76 (March 17, 1999) /
+   This is functionally the same as Ver. 075.  This version can
+   be compiled to run with GNU's GMP rational arithmetic library using
+   Polymake's GMP-wrappers.  cddr+ with GMP runs much faster than
+   the previous versions of cddr+ (with g++ Rational library). 
 
 --- end of file: cddHISTORY ---

@@ -1,6 +1,6 @@
 /* cddtype.h: Arithmetic type header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.75, November 30, 1997 
+   Version 0.76, March 17, 1999 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -10,7 +10,14 @@
    the manual cddman.tex for detail.
 */
 
+
+#ifdef	GMP
+// using GMP wrapper of Polymake (polymake@math.tu-berlin.de)
+#include <gmp_rational.h>
+#else
+// using GNU g++ lib Rational library
 #include <Rational.h>
+#endif	GMP
 
 #ifdef	RATIONAL
 #define ZERO 0

@@ -1,8 +1,8 @@
 1997-11-30
 ---------------------------------------
-PROGRAM cdd+ (version 0.75) README FILE
+PROGRAM cdd+ (version 0.76) README FILE
 ---------------------------------------
-The program  cdd+  is a C++ implementation of the Double Description 
+1. The program  cdd+  is a C++ implementation of the Double Description 
 Method of Motzkin et al. for generating all vertices (i.e. extreme points)
 and extreme rays of a general convex polyhedron in R^d given by a system 
 of linear inequalities:
@@ -21,23 +21,30 @@ The program cdd+ is a C++ version of the ANSI C
 program cdd basically for the same purpose.  The main difference is that 
 it can be compiled for both rational (exact) arithmetic and 
 floating point arithmetic. (Note that cdd runs on floating
-arithmetic only.)  Since cdd+ uses GNU g++ library, in particular 
-Rational library, one needs a recent (2.6.0 or higher) gcc compiler
-and g++-lib.  The program seems to be 
-stable when compiled with gcc-2.6.3 and libg++-2.6.2, or
-more recent. 
+arithmetic only.) 
 
-What's new in Version 0.75?
-The version 0.75 is a maintenance release which accepts
-an updated Polyhedra format with "H-representation" and
-"V-representation" statements.  Also, we added three additional
-options "zero_tolerance", "round_output_off" and 
-"output_digits".  The first one is to set a zero tolerance 
-of floating-point computation, and the latter ones are to 
-control the format of output numbers.
-See cddman.tex for details.
+2. What's new in Version 0.76?
 
-The cdd+ package is in "tar"ed and "compress"ed format with name
+Thanks to TU-Berlin's Polymake Team, cdd+ now runs with GNU's
+GMP rational library as well as with the GNU g++ Rational library.
+More specifically, Polymake Team (Ewgenij Gawrilow and Michael Joswig)
+wrote C++ wrappers "gmp_integer.cc" and "gmp_rational.cc" for GMP 
+which cdd+ can use instead of GNU's G++ Rational arithmetic library.
+ 
+Since cddr+_gmp runs substantially faster 
+than cddr+_g++, any cdd+ user who needs exact arithmetic
+computation is strongly recommended to use cdd+ with GMP.
+One should be also aware that GMP-2.0.2 has known bugs and
+all the patches available from GMP-Homepage 
+(http://www.matematik.su.se/~tege/gmp/) should be applied.
+Even with all these troubles, its speed compensates them easily.
+How much faster?  It all depends on your data.  For kkd* polytopes
+included in cdd+, cddr+_gmp runs three to ten times faster than
+cddr+_g++.  For less complicated polytopes, the speedup might be modest
+but one can expect the gmp version runs always faster.
+
+
+3. The cdd+ package is in "tar"ed and "compress"ed format with name
 cdd+-***.tar.Z, where *** is the version number.  The standard
 anonymous ftp site for the package is
 
@@ -59,7 +66,7 @@ unpack the package at once by
 The package cdd+ consists of the following files which will be
 placed in a newly created sub-directory cdd+-*** :
 
-     cdd.readme     This file itself
+     README.cdd+   This file itself
 
      cdd.C         C++ main source file
      cddarith.C    C++ main arithmetic code 
@@ -74,10 +81,14 @@ placed in a newly created sub-directory cdd+-*** :
      setoper.h     The header file for setoper.C 
 
      cddman.tex    Latex source file of cdd+ User Manual
-     cddman.bbl  & bibliography file of cdd+ Reference Manual\\
-     cddHISTORY    brief description of changes made at each updates
+     cddman.bbl    bibliography file of cdd+ Reference Manual
+     HISTORY.cdd   brief description of changes made at each updates
      ine           A subdirectory containing sample inequality input files
      ext           A subdirectory containing sample points/rays input files
+
+     gmp_integer.cc, gmp_rational.cc
+                   Polymake's GMP wrappers in C++
+
      COPYING       GNU GENERAL PUBLIC LICENSE
 
 Before using the software, please read COPYING and
