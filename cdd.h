@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.72b, April 28, 1995 
+   Version 0.73, September 6, 1995 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,7 +11,7 @@
 */
 
 #define COPYRIGHT   "Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.72b (April 28, 1995)"
+#define DDVERSION   "Version 0.73 (September 6, 1995)"
 
 #ifdef RATIONAL
 #define ARITHMETIC  "Compiled for Rational Exact Arithmetic"
@@ -38,6 +38,8 @@ typedef long colindex[NMAX+1];
 typedef myTYPE *Amatrix[MMAX];
 typedef myTYPE *Arow;
 typedef myTYPE *Bmatrix[NMAX];
+typedef set_type Aincidence[MMAX];
+typedef int *SignAmatrix[MMAX]; /* Sign (+1, 0 ,-1)-matrix of Amatrix type */
 typedef char DataFileType[filenamelen];
 typedef char LineType[linelenmax];
 typedef char WordType[wordlenmax];
@@ -81,6 +83,10 @@ typedef enum {
 } ConversionType;
 
 typedef enum {
+  CrissCross,DualSimplex,CombMaxImprove
+} LPsolverType;
+
+typedef enum {
   IncOff=0, IncCardinality, IncSet
 } IncidenceOutputType;
 
@@ -121,7 +127,8 @@ extern long RayCount, FeasibleRayCount, WeaklyFeasibleRayCount,
 extern long EdgeCount,TotalEdgeCount;
 extern long count_int,count_int_good,count_int_bad;
 extern boolean DynamicWriteOn, DynamicRayWriteOn, LogWriteOn, 
-  ShowSignTableauOn, OptimizeOrderOn, PostAnalysisOn, debug;
+  ShowSignTableauOn, PostAnalysisOn, 
+  CondensedListOn, SignPivotOn, ManualPivotOn, debug;
 extern Amatrix AA;
 extern Bmatrix InitialRays;
 extern colindex InitialRayIndex;
@@ -147,12 +154,13 @@ extern boolean VerifyInput; /* Verification switch for the input data */
 extern boolean PreOrderedRun; 
 extern CompStatusType CompStatus;     /* Computation Status */
 extern ConversionType Conversion;
+extern LPsolverType LPsolver;
 extern IncidenceOutputType IncidenceOutput;
 extern AdjacencyOutputType AdjacencyOutput;
 extern ErrorType Error;
 extern FileInputModeType FileInputMode;
 extern DataFileType inputfile,ifilehead,ifiletail,
-     outputfile,projfile, icdfile,adjfile,logfile,dexfile,verfile;
+     outputfile,projfile, icdfile,adjfile,iadfile,logfile,dexfile,verfile;
 extern time_t starttime, endtime;
 extern unsigned int rseed;
 
@@ -185,14 +193,18 @@ void SelectPivot1(Amatrix, HyperplaneOrderType,
    rowrange, rowset, colset, rowrange *, colrange *,boolean *);
 myTYPE TableauEntry(Amatrix, Bmatrix T, rowrange, colrange);
 void WriteTableau(ostream &,Amatrix, Bmatrix T, InequalityType);
-char Sign(myTYPE val);
+char Sign(myTYPE);
+int myTYPE2sign(myTYPE);
+int long2sign(long);
+void WriteSignAmatrix(ostream &f, SignAmatrix X,
+  rowindex OV, long bflag[], rowrange objrow, colrange rhscol);
 void WriteSignTableau(ostream &f, Amatrix X, Bmatrix T,
   rowindex OV, long bflag[], rowrange objrow, colrange rhscol);
 void OutputTableau(Amatrix, Bmatrix T,InequalityType);
 void SelectPivot2(Amatrix, Bmatrix T,
    HyperplaneOrderType,rowrange, rowset, colset,
    rowrange *, colrange *,boolean *);
-void GausianColumnPivot1(Amatrix, rowrange, colrange,rowrange);
+void GausianColumnPivot1(Amatrix, Bmatrix, SignAmatrix, rowrange, colrange);
 void GausianColumnPivot2(Amatrix, Bmatrix,  rowrange, colrange);
 void InitializeBmatrix(Bmatrix T);
 void SetToIdentity(Bmatrix T);
@@ -201,6 +213,7 @@ void WriteBmatrix(ostream &, Bmatrix T);
 void ReduceAA(rowset, colset);
 void DualizeAA(Bmatrix T);
 void EnlargeAAforInteriorFinding(void);
+void EnlargeAAforZeroRHSLP(void);
 void RecoverAAafterInteriorFinding(void);
 boolean RowEquivalent_Q(Arow a1, Arow a2, colrange n);
 void FindRowEquivalenceClasses(long *classno, rowindex);
@@ -211,14 +224,21 @@ void ComputeRank(Amatrix, unsigned long *, long *);
 void ComputeBInverse(Amatrix, long, Bmatrix InvA1, long *);
 void FindBasis(Amatrix, HyperplaneOrderType, rowset, long *,
    Bmatrix BasisInverse, long *);
-void SelectCrissCrossPivot(Amatrix, Bmatrix T, rowindex OV,
-  long bflag[], rowrange,colrange,rowrange *,colrange *,
+void SelectCrissCrossPivot(Amatrix, Bmatrix, rowindex,
+  long, rowrange,colrange,rowrange *,colrange *,
   boolean *, LPStatusType *);
+void SelectDualSimplexPivot(Amatrix, Bmatrix, rowindex,
+    colindex, long, rowrange, colrange,
+    rowrange *, colrange *, boolean *, LPStatusType *);
 void CrissCrossMinimize(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
   rowrange, colrange, 
   LPStatusType *, myTYPE *optvalue, Arow, Arow, colindex,
   rowrange *, colrange *, long *);
 void CrissCrossMaximize(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
+  rowrange, colrange, 
+  LPStatusType *, myTYPE *optvalue, Arow, Arow, colindex,
+  rowrange *, colrange *, long *);
+void ManualPivot(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
   rowrange, colrange, 
   LPStatusType *, myTYPE *optvalue, Arow, Arow, colindex,
   rowrange *, colrange *, long *);
@@ -252,11 +272,11 @@ void WriteTimes(ostream &);
 void WriteProgramDescription(ostream &);
 void WriteSolvedProblem(ostream &);
 void WriteNumber(ostream &, myTYPE);
-void WriteSetElements(ostream &, set_type);
 void WriteRayRecord(ostream &, RayRecord *);
 void WriteRayRecord2(ostream &, RayRecord *);
 void WriteExtFile(ostream &, ostream &);
 void WriteIncidenceFile(ostream &);
+void WriteInputAdjacencyFile(ostream &);
 void WriteAdjacencyFile(ostream &);
 void WriteProjResult(ostream &, ostream &, long *);
 void WriteProjRayRecord(ostream &, RayRecord *, long *);

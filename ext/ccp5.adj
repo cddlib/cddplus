@@ -1,3 +1,6 @@
+* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
 *Adjacency List of output (=inequalities=facets)
 *cdd input file : ccp5.ine (16 x 11)
 *cdd output file: ccp5.ext

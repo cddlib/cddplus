@@ -1,6 +1,6 @@
 /* cddarith.C:  Arithmetic Procedures for cdd.C
-   written by Komei Fukuda, fukuda@dma.epfl.ch
-   Version 0.72b, April 28, 1995 
+   written by Komei Fukuda, fukuda@ifor.math.ethz.ch
+   Version 0.73, September 6, 1995 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -17,7 +17,7 @@
 
 extern "C" {
 
-#include "setoper.h"  /* set operation library header (Ver. April 15,1995 or later) */
+#include "setoper.h"  /* set operation library header (Ver. May 14,1995 or later) */
 #include "cdddef.h"
 #include "cdd.h"
 #include <stdio.h>
@@ -744,7 +744,8 @@ void UpdateEdges(RayRecord *RRbegin, RayRecord *RRend)
     workleft = 100.0 * (ZeroRayCount-pos1) * (ZeroRayCount - pos1-1.0) / totalpairs;
     if (ZeroRayCount>=500 && DynamicWriteOn && pos1%10 ==0 && prevworkleft-workleft>=10 ) {
       cout << "*Work of iteration " << Iteration << "(/" << mm << "):" 
-         << pos1 << "/" << ZeroRayCount << " => %" << workleft << "left\n";
+         << pos1 << "/" << ZeroRayCount << " => ";
+      cout.width(4); cout << workleft; cout << "% left\n";
       prevworkleft=workleft;
     }    
   }while(Ptr1!=RRend && Ptr1!=NULL);
@@ -927,8 +928,9 @@ void EvaluateARay1(rowrange i)
   while (Ptr != NULL) {
     temp = 0;
     for (j = 0; j < nn; j++)
-      temp += AA[i - 1][j] * Ptr->Ray[j];
+      temp = temp + AA[i - 1][j] * Ptr->Ray[j];
     *(Ptr->ARay) = temp;
+    // if ( temp <= -zero && Ptr != FirstRay) {
     if ( temp < -zero && Ptr != FirstRay) {
       /* printf("Moving an infeasible record w.r.t. %ld to FirstRay\n",i); */
       if (Ptr==LastRay) LastRay=PrevPtr;
@@ -967,7 +969,7 @@ void EvaluateARay2(rowrange i)
     Ptr->Next=NULL;     /* then clear the Next pointer */
     temp = 0;
     for (j = 0; j < nn; j++)
-      temp += AA[i - 1][j] * Ptr->Ray[j];
+      temp = temp +  AA[i - 1][j] * Ptr->Ray[j];
     *(Ptr->ARay) = temp;
     if ( temp < -zero) {
       if (!negfound){
@@ -1178,7 +1180,7 @@ void FeasibilityIndices(long *fnum, long *infnum, rowrange i)
   while (Ptr != NULL) {
     temp = 0;
     for (j = 0; j < nn; j++)
-      temp += AA[i - 1][j] * Ptr->Ray[j];
+      temp = temp + AA[i - 1][j] * Ptr->Ray[j];
     if (temp >= -zero)
       (*fnum)++;
     else
@@ -1326,7 +1328,8 @@ void AddNewHyperplane1(rowrange hnew)
     progress = 100.0 * ((double)pos1 / pos2) * (2.0 * pos2 - pos1) / pos2;
     if (progress-prevprogress>=10 && pos1%10==0 && DynamicWriteOn) {
       cout << "*Progress of iteration " << Iteration << "(/" << mm << "):" <<
-        pos1 << "/" << pos2 << " => " << progress << " done\n";
+        pos1 << "/" << pos2 << " => ";
+      cout.width(4); cout << progress; cout << "% done\n";
       prevprogress=progress;
     }
   }

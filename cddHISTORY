@@ -1,5 +1,4 @@
-cdd & cdd+ HISTORY file
-
+cdd & cdd+ HISTORY file    (as of September 6, 1995)
 
 *** cdd version (date) / changes ***
 
@@ -191,7 +190,13 @@ Version C0.55 (December 5, 1994) /
    recommended to use.  Some newly found (minor) bugs are fixed.
 
 Version C0.55a (December 18, 1994) /
-   The broken "preprojection" option in Version 0.55a is fixed.
+   The broken "preprojection" option in Version 0.55 is fixed.
+
+Version C0.56 (August 7, 1995) /
+   Some compilation problem associated with incompatible set_type
+   variables in setoper.c is fixed.  Various minor bugs are fixed.
+   The output format of incidence file is slightly modified. (See
+   the Reference Manual cddman.tex).
 
 
 *** cdd+ version (date) / changes ***
@@ -226,8 +231,11 @@ ccd+ Version 0.72a (April 16, 1995) /
    Cycling bug of Version 072 of LP maximize and minimize has been 
    fixed.
 
-ccd+ Version 0.72b (April 28, 1995) /
-   Yet another bug of maxcutoff and mincutoff options has been 
-   fixed.
+ccd+ Version 0.73 (Septembe 6, 1995) /
+   A new option "input_adjacency" has been added.
+   The output format of incidence file is slightly modified. (See
+   the Reference Manual cddman.tex).  This incidence file format is compatible
+   with cdd-056 and we will try not to change the format any more.
+
 
 --- end of file: cddHISTORY ---

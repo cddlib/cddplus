@@ -1,7 +1,7 @@
 /* cdd.C: Main program of the sofware cdd+
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.72, April 16, 1995
-   Standard ftp site: ftp.epfl.ch,  Directory: incoming/dma
+   Version 0.73, September 6, 1995
+   Standard ftp site: ifor13.ethz.ch (129.132.154.13), Directory: pub/fukuda/cdd 
 */
 
 /* cdd+ : C++-Implementation of the double description method for
@@ -38,7 +38,7 @@
 
 extern "C" {
 #include "setoper.h" 
-  /* set operation library header (April 15, 1995 version or later) */
+  /* set operation library header (May 14, 1995 version or later) */
 #include "cdddef.h"
 #include "cdd.h"
 #include <stdio.h>
@@ -67,7 +67,9 @@ long RayCount, FeasibleRayCount, WeaklyFeasibleRayCount,
 long EdgeCount, TotalEdgeCount;
 long count_int=0,count_int_good=0,count_int_bad=0;
 boolean DynamicWriteOn, DynamicRayWriteOn, LogWriteOn, 
-  ShowSignTableauOn=False, OptimizeOrderOn=False, PostAnalysisOn=False, debug;
+  ShowSignTableauOn=False, 
+  PostAnalysisOn=False, CondensedListOn=False, SignPivotOn=False, 
+  ManualPivotOn=False, debug;
 Amatrix AA;
 Bmatrix InitialRays;
 colindex InitialRayIndex; /* 0 if the corr. ray is for generator of an extreme line */ 
@@ -94,12 +96,13 @@ boolean PreOrderedRun;
   /* True if the rows are ordered before execution & all necessary adjacencies are stored */
 CompStatusType CompStatus;  /* Computation Status */
 ConversionType Conversion;
+LPsolverType LPsolver;
 IncidenceOutputType IncidenceOutput;
 AdjacencyOutputType AdjacencyOutput;
 ErrorType Error;
 FileInputModeType FileInputMode;
 DataFileType inputfile,ifilehead,ifiletail,
-  outputfile,projfile,icdfile,adjfile,logfile,dexfile,verfile;
+  outputfile,projfile,icdfile,adjfile,iadfile,logfile,dexfile,verfile;
 time_t starttime, endtime;
 unsigned int rseed=1;  /* random seed for random row permutation */
 
@@ -118,7 +121,8 @@ void DefaultOptionSetup(void)
   PreOrderedRun=True;
   VerifyInput=False;
   Conversion = IneToExt;
-    
+  LPsolver = DualSimplex;   
+ 
   IncidenceOutput = IncOff;
   AdjacencyOutput = AdjOff;
   InitBasisAtBottom = False;
@@ -188,13 +192,21 @@ void DDEnumerate(ostream &f, ostream &f_log)
       WriteIncidenceFile(writing_icd);
       if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
     }
-    if (AdjacencyOutput != AdjOff){
+    if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
       ofstream writing_adj(adjfile);
       if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
       WriteAdjacencyFile(writing_adj);
       writing_adj.close();
       if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+    }
+    if (AdjacencyOutput == InputAdjacency || AdjacencyOutput == IOAdjacency){
+      SetWriteFileName(iadfile, 'j', "input_adjacency");
+      ofstream writing_iad(iadfile);
+      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",iadfile);
+      WriteInputAdjacencyFile(writing_iad);
+      writing_iad.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",iadfile);
     }
     FreeDDMemory();
   } else {
@@ -240,10 +252,10 @@ void DDRowDecomposition(ostream &f, ostream &f_log)
     EqualityIndex[k]=1;   /* Equality for k-th inequality */
     if (k>=2) EqualityIndex[k-1]=-1;  /* Strict inequality for 1,2,...,(k-1)st inequalities */
     if (DynamicWriteOn) {
-      (f) << "* Decomposition problem number = " << k << "(/" << (mm-nn+2) << ")\n";
+      writing_dex << "* Decomposition problem number = " << k << "(/" << (mm-nn+2) << ")\n";
       cout << "* Decomposition problem number = " << k << "(/" << (mm-nn+2) << ")\n";
     }
-    DecompositionCore(f, f_log);
+    DecompositionCore(writing_dex, f_log);
     FeasibleRaySum=FeasibleRaySum+FeasibleRayCount;
   }
   switch (Inequality) {
@@ -276,7 +288,7 @@ void DDRowDecomposition(ostream &f, ostream &f_log)
     WriteIncidenceFile(writing_icd);
     if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
   }
-  if (AdjacencyOutput != AdjOff){
+  if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
     SetWriteFileName(adjfile, 'a', "adjacency");
     ofstream writing_adj(adjfile);
     if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
@@ -375,7 +387,7 @@ void PreProjection(ostream &f, ostream &f_log)
       WriteIncidenceFile(writing_icd);
       if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
     }
-    if (AdjacencyOutput != AdjOff){
+    if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
       ofstream writing_adj(adjfile);
       if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
@@ -543,13 +555,21 @@ void  PostAnalysisMain(ifstream &f, ostream &f_log)
       WriteIncidenceFile(writing_icd);
       if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
     }
-    if (AdjacencyOutput != AdjOff){
+    if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
       ofstream writing_adj(adjfile);
       if (DynamicWriteOn) printf("Writing the adjacency file %s...\n",adjfile);
       WriteAdjacencyFile(writing_adj);
       writing_adj.close();
       if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
+    }
+    if (AdjacencyOutput == InputAdjacency || AdjacencyOutput == IOAdjacency){
+      SetWriteFileName(iadfile, 'j', "input_adjacency");
+      ofstream writing_iad(iadfile);
+      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",iadfile);
+      WriteInputAdjacencyFile(writing_iad);
+      writing_iad.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",iadfile);
     }
     FreeDDMemory();
   } else {
@@ -688,38 +708,42 @@ void LPMain(ostream &f, ostream &f_log)
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
+  Bmatrix BasisInv;
 
+  if (Inequality==ZeroRHS){
+    // printf("Sorry, LP optimization is not implemented for RHS==0.\n");
+    // goto _L99;
+    EnlargeAAforZeroRHSLP();
+  }
   time(&starttime);
   LPsol = new myTYPE[nn];
-  LPdsol = new myTYPE[nn]; 
-  if (Inequality==ZeroRHS){
-    printf("Sorry, LP optimization is not implemented for RHS==0.\n");
-    goto _L99;
-  }
+  LPdsol = new myTYPE[nn];
+  InitializeBmatrix(BasisInv); 
   if (Conversion==LPmax){
-    CrissCrossMaximize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
+    CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
       &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   }
   else if (Conversion==LPmin){
-    CrissCrossMinimize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
+    CrissCrossMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
       &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   }
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
 _L99:;
+  delete[] LPsol;  delete[] LPdsol; 
+  free_Bmatrix(BasisInv);
 }
 
 void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
 {
   colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
   Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
-  LPsol = new myTYPE[nn];
-  LPdsol = new myTYPE[nn]; 
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
+  Bmatrix BasisInv;
 
   *found = False;
   if (Inequality==ZeroRHS){
@@ -727,16 +751,21 @@ void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
     goto _L99;
   }
   EnlargeAAforInteriorFinding();
+  InitializeBmatrix(BasisInv);
+  LPsol = new myTYPE[nn];
+  LPdsol = new myTYPE[nn]; 
   time(&starttime);
   OBJrow=mm; RHScol=1;
-  CrissCrossMaximize(f, f_log, AA, InitialRays, OBJrow, RHScol, 
+  CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (LPStatus==Optimal || LPStatus==DualInconsistent) *found=True;
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
+  free_Bmatrix(BasisInv);
   RecoverAAafterInteriorFinding();
 _L99:;
+  delete[] LPsol;  delete[] LPdsol;
 }
 
 

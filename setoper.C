@@ -1,7 +1,7 @@
 /* setoper.C:
  * A set operation library 
  * created by Komei Fukuda, April 3, 1995
- * Last modified, April 15, 1995
+ * Last modified, August 7, 1995
 */
 
 #include <fstream.h>
@@ -9,6 +9,19 @@
 extern "C" {
 #include "setoper.h"
 }
+
+/* Definitions for optimized set_card function 
+   by David Bremner bremner@cs.mcgill.ca  
+ */
+static unsigned char set_card_lut[]={
+0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
+1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8};
 
 long set_blocks(unsigned long len)
 {
@@ -197,18 +210,18 @@ void set_write(set_type set)
 	for (elem=1;elem<=set[0];elem++)
 	{
 		if (set_member(elem,set))
-			printf("%ld ",elem);
+			cout << " " << elem;
 	}
 }
 
-void set_fwrite(ofstream f,set_type set)
+void set_fwrite(ostream &f,set_type set)
 {
 	long elem;
 	
 	for (elem=1;elem<=set[0];elem++)
 	{
 		if (set_member(elem,set))
-			f << elem << " ";
+			f << " " << elem;
 	}
 }
 
@@ -218,7 +231,7 @@ void set_binwrite(set_type set)
 	long forlim;
 	unsigned long e1,e2;
 	
-	printf("max element = %ld,\n",set[0]);
+	cout << "ground set size = " << set[0] << "\n";
 	forlim=set_blocks(set[0])-1;
 	for (i=forlim;i>=1;i--)
 	{
@@ -226,22 +239,23 @@ void set_binwrite(set_type set)
 		for (j=SETBITS-1;j>=0;j--)
 		{
 			e1=(e1>>j);
-			printf("%1ld",e1);
+                        cout.width(1);
+			cout << e1;
 			e1=e2-(e1<<j);
 			e2=e1;
 		}
-		printf(" ");
+		cout << " ";
 	}
 }
 
 
-void set_fbinwrite(ofstream f,set_type set)
+void set_fbinwrite(ostream &f,set_type set)
 {
 	int i,j;
 	long forlim;
 	unsigned long e1,e2;
 	
-	printf("max element = %ld,\n",set[0]);
+	f << "ground set size = " << set[0] << "\n";
 	forlim=set_blocks(set[0])-1;
 	for (i=forlim;i>=1;i--)
 	{
@@ -249,11 +263,12 @@ void set_fbinwrite(ofstream f,set_type set)
 		for (j=SETBITS-1;j>=0;j--)
 		{
 			e1=(e1>>j);
+                        f.width(1);
 			f << e1;
 			e1=e2-(e1<<j);
 			e2=e1;
 		}
-		printf(" ");
+		f << " ";
 	}
 }
 

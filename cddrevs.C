@@ -1,6 +1,6 @@
 /* cddrevs.C:  Reverse Search Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.72, April 16, 1995
+   Version 0.73, September 6, 1995
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -16,7 +16,7 @@
 #include "cddrevs.h"
 
 extern "C" {
-#include "setoper.h"  /* set operation library header (Ver.  April 15,1995 or later) */
+#include "setoper.h"  /* set operation library header (Ver. May 14,1995 or later) */
 #include "cdddef.h"
 #include "cdd.h"
 #include <stdio.h>
@@ -64,7 +64,6 @@ void topeOBJECT::fwrite(ostream& f)
     if (this->sv[j-1] < 0) f << " -";
     if (this->sv[j-1] ==0) f << " 0"; 
   }
-  f << "\n"; 
 }
 
 int operator==(const topeOBJECT &t1, const topeOBJECT &t2)
@@ -125,37 +124,48 @@ topeOBJECT Adj(topeOBJECT v, long i)
 void ReverseSearch(ostream &wf, topeOBJECT s, long delta)
 {
   topeOBJECT v=s,u=s,w=s;
-  long j=0,count=1;
+  long j=0,count=1,fcount=0;
   boolean completed=False;
 
-  cout << "Reverse search starts with #1 object: "; s.fwrite(cout);
-  (wf) << "begin\n";
+  cout << "\nReverse search starts with #1 object: ";
+  s.fwrite(cout); 
+  if (CondensedListOn) {
+    wf << "begin\n" << "  *****  " << delta << "  tope_condensed\n";
+  }else{
+    wf << "begin\n" << "  *****  " << delta << "  tope\n";
+  }
   s.fwrite(wf); 
   while (!completed)
   {
     while (j<delta)
     {
       j=j+1;
-      if (debug) cout << "checking " << j << "th neighbour.\n";
       w=Adj(v,j);
-      if (debug) {cout << "candidate w is "; w.fwrite(cout);}
       if (w!=v && f(w)==v)
       {
+        count++;
+        if (CondensedListOn){
+          cout << "\n #" << count << " r " << j << " f " << fcount; 
+          wf << "\n r " << j << " f " << fcount; 
+        } else { 
+          cout << "\nA new object #" << count << " found: "; w.fwrite(cout);
+          wf << "\n"; w.fwrite(wf);
+        }
         v=w;   j=0;
-        count=count+1; 
-        cout << "A new object #" << count << " found: ";
-        v.fwrite(cout);
-        v.fwrite(wf); 
+        fcount=0;
       }
     }
     if (!(v==s))
     {
       u=v;  v=f(v);
       j=NeighbourIndex(u,v);
+      fcount++; 
       if (j==delta) completed=True;
     }
   }
-  (wf) << "end\n";
+  wf << "\nend";
+  cout << "\nNumber ***** of topes = " << count << "\n";
+  wf << "\nNumber ***** of topes = " << count << "\n";
 }
 
 // Facet recognition programs using LPmax (Criss-Cross) code
@@ -163,22 +173,32 @@ void ReverseSearch(ostream &wf, topeOBJECT s, long delta)
 boolean Facet_Q(topeOBJECT tope, rowrange ii)
 {
   colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
-  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0, tempRHS=0;  /* LP optimum value */
   long LPiter,testi, i, j;
   boolean answer=True;
+  static colrange nlast=0;
+  static Bmatrix BInv;
 
-  LPsol = new myTYPE[nn];
-  LPdsol = new myTYPE[nn]; 
+  if (nlast!=nn){
+    if (nlast>0){
+      delete[] LPsol; 
+      delete[] LPdsol;
+      free_Bmatrix(BInv);
+    }
+    InitializeBmatrix(BInv);
+    LPsol = new myTYPE[nn];
+    LPdsol = new myTYPE[nn];
+    nlast=nn; 
+  }
   Conversion=LPmax;
-  time(&starttime);
   RHScol=1;
   mm=mm+1;
   OBJrow=mm;
   AA[OBJrow-1]=new myTYPE[nn];
-  OBJrow=mm;
+  if (debug) cout << "Facet_Q:  create an exra row " << OBJrow << "\n";
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {
       if (debug) cout << "reversing the signs of " << i << "th inequality\n";
@@ -189,7 +209,7 @@ boolean Facet_Q(topeOBJECT tope, rowrange ii)
   for (j=1; j<=nn; j++) AA[OBJrow-1][j-1]=-AA[ii-1][j-1]; 
   AA[OBJrow-1][0]=0;
   AA[ii-1][0]=tempRHS+1;   /* relax the ii-th inequality by +1 */
-  CrissCrossMaximize(cout, cout, AA, InitialRays, OBJrow, RHScol, 
+  CrissCrossMaximize(cout, cout, AA, BInv, OBJrow, RHScol, 
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   if (debug) cout << ii << "-th LP solved with objective value =" << ov << 
     " RHS value = " << tempRHS << "  iter= " << LPiter << "\n";
@@ -204,6 +224,7 @@ boolean Facet_Q(topeOBJECT tope, rowrange ii)
   }
   AA[ii-1][0]=tempRHS;   /* restore the original RHS */
   delete[] AA[OBJrow-1];
+  if (debug) cout << "Facet_Q:  delete the exra row " << OBJrow << "\n";
   mm=mm-1;
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {
@@ -237,7 +258,8 @@ void FacetListMain(ostream &f, ostream &f_log)
     WriteRowEquivalence(f, classno, rowequiv);
     goto _L99;
   }
- 
+
+  time(&starttime); 
   set_initialize(&subrows,mm);
   set_initialize(&allcols,nn); 
   for (j=1;j<=nn;j++) set_addelem(allcols,j);
@@ -256,8 +278,10 @@ void FacetListMain(ostream &f, ostream &f_log)
       (f) << "row " << i << " does not determine a facet.\n";
     }
   }
+  time(&endtime);
   (f) << "* Here is a minimal system representing the same polyhedral set as the input.\n";
   WriteSubMatrixOfAA(f,subrows,allcols,Inequality);
+  WriteTimes(f); WriteTimes(f_log); WriteTimes(cout);
   set_free(&subrows);
   set_free(&allcols); 
 _L99:;
@@ -289,8 +313,7 @@ void TopeListMain(ostream &f, ostream &f_log)
     goto _L99;
   }
 
-  cout << "the initial tope = "; Tope.fwrite(cout);  
-
+  time(&starttime);
   set_initialize(&subrows,mm);
   set_initialize(&allcols,nn); 
   for (j=1;j<=nn;j++) set_addelem(allcols,j);
@@ -299,6 +322,8 @@ void TopeListMain(ostream &f, ostream &f_log)
   } else {
     ReverseSearch(f, Tope,mm);
   }
+  time(&endtime);
+  WriteTimes(f); WriteTimes(f_log); WriteTimes(cout);
   set_free(&subrows);
   set_free(&allcols); 
 _L99:;

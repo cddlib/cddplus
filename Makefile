@@ -1,19 +1,19 @@
 # Makefile for cdd+ compiler.
 
 # You must use GNU g++ compiler of version 2.6.0 or higher
-CC = gcc
+CC = /usr/local/bin/gcc
 
 # Location of g++-library archive file libg++.a
-LIBDIR = /usr/local/lib
+#LIBDIR = /usr/lib
+LIBDIR = /usr/local/lib 
 
 # Location of g++-library include files
-INCLUDEDIR = /usr/local/lib/g++-include
-#INCLUDEDIR = /usr/local/include/g++
+#INCLUDEDIR = /usr/include/g++
+INCLUDEDIR = /usr/local/lib/g++-include 
 
 # Compiler options
 #CFLAGS = -g -O -I$(INCLUDEDIR)
 CFLAGS = -O -I$(INCLUDEDIR)
-#CFLAGS = -g -I$(INCLUDEDIR)
 
 ########## You shouldn't have to change anything after this point ##########
 

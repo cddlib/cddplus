@@ -1,7 +1,7 @@
 Cross polytope of dim 8
 The dual of 8 dim hypercube
 begin
-      256      9    real
+      256      9    integer 
   1  1  1  1  1  1  1  1  0
   1  0  1  1  1  1  1  1  0
   1  1  0  1  1  1  1  1  0

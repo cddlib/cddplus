@@ -1,0 +1,14 @@
+file name: topettest1.ine
+The associated arrangement of hyperplanes
+contains 18 topes (full-dimensional regions)
+begin
+    6   3    integer
+ -2    1   0
+  2    0  -1
+ -1    1   0
+ -1    0   1
+  4   -1  -1
+  1   -1   1
+end
+tope_listing
+

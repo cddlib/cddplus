@@ -1,0 +1,22 @@
+* cdd+: Double Description Method in C++:Version 0.73 (August 7, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Rational Exact Arithmetic
+*Input File:facettest.ine(6x3)
+*Facet listing is chosen.
+row 1 determines a facet.
+row 2 does not determine a facet.
+row 3 does not determine a facet.
+row 4 does not determine a facet.
+row 5 determines a facet.
+row 6 determines a facet.
+* Here is a minimal system representing the same polyhedral set as the input.
+begin
+  3  3  integer
+ -2 1 0
+ 4 -1 -1
+ 1 -1 1
+end
+*Computation starts     at Wed Sep  6 15:53:40 1995
+*            terminates at Wed Sep  6 15:53:41 1995
+*Total processor time = 1 seconds
+*                     = 0h 0m 1s

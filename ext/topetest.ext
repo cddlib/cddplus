@@ -1,0 +1,31 @@
+* cdd+: Double Description Method in C++:Version 0.73 (August 7, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Rational Exact Arithmetic
+*Input File:topetest.ine(6x3)
+*Tope listing is chosen.
+begin
+  *****  6  tope
+ + + + + + +
+ - + + + + +
+ - - + + + +
+ - + - + + +
+ - - - + + +
+ - + + - + +
+ - + - - + +
+ + + + + - +
+ + - + + - +
+ - - + + - +
+ - - - + - +
+ + + + + + -
+ + + + - + -
+ - + + - + -
+ - + - - + -
+ + + + + - -
+ + - + + - -
+ + + + - - -
+end
+Number ***** of topes = 18
+*Computation starts     at Wed Sep  6 15:53:43 1995
+*            terminates at Wed Sep  6 15:54:17 1995
+*Total processor time = 34 seconds
+*                     = 0h 0m 34s

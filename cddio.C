@@ -1,8 +1,7 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.72, April 16, 1995 
+   Version 0.73, September 6, 1995 
 */
-
 
 /* cdd.C : C++-Implementation of the double description method for
    computing all vertices and extreme rays of the polyhedron 
@@ -18,7 +17,7 @@
 #include "cddrevs.h"
 
 extern "C" {
-#include "setoper.h"  /* set operation library header (Ver. April 15,1995 or later) */
+#include "setoper.h"  /* set operation library header (Ver. May 14,1995 or later) */
 #include "cdddef.h"
 #include "cdd.h"
 #include <stdio.h>
@@ -95,19 +94,21 @@ void SetWriteFileName(DataFileType fname, char cflag, char *fscript)
   
   switch (cflag) {
     case 'o':
-      extension=".ext";break;
+      extension=".ext";break;   /* vertex and ray output file; general output file */
     case 'a':
-      extension=".adj";break;
+      extension=".adj";break;   /* adjacency file */
     case 'i':
-      extension=".icd";break;
+      extension=".icd";break;   /* incidence file */
+    case 'j':
+      extension=".iad";break;   /* input adjacency file */
     case 'l':
-      extension=".ddl";break;
+      extension=".ddl";break;   /* log file */
     case 'd':
       extension=".dex";break;   /* decomposition output */
     case 'p':
-      extension="sub.ine";break;
+      extension="sub.ine";break;  /* preprojection sub inequality file */
     case 'v':
-      extension=".solved";break;
+      extension=".solved";break;  /* verify_input file */
     default:
       extension=".xxx";break;
   }
@@ -210,7 +211,17 @@ void ProcessCommandLine(ifstream &f, string line)
     return;
   }
   if (line== "adjacency") {
-    AdjacencyOutput = OutputAdjacency;
+    if (AdjacencyOutput==InputAdjacency || AdjacencyOutput==IOAdjacency)
+      AdjacencyOutput=IOAdjacency;
+    else
+      AdjacencyOutput = OutputAdjacency;
+    return;
+  }
+  if (line== "input_adjacency") {
+    if (AdjacencyOutput==OutputAdjacency || AdjacencyOutput==IOAdjacency)
+      AdjacencyOutput = IOAdjacency;
+    else 
+      AdjacencyOutput = InputAdjacency;
     return;
   }
   if (line== "postanalysis") {
@@ -324,8 +335,8 @@ void ProcessCommandLine(ifstream &f, string line)
   }
   if (line== "maximize" && Conversion != LPmax) {
     if (debug) printf("linear maximization is chosen.\n");
-    LPcost=new myTYPE[nn];
-    for (j=0;j<nn;j++) {
+    LPcost=new myTYPE[ninput];
+    for (j=0;j<ninput;j++) {
       (f) >> cost;
       LPcost[j]=cost;
       if (debug) cout << " cost[" << j << "] = "<< LPcost[j] <<"\n";
@@ -338,8 +349,8 @@ void ProcessCommandLine(ifstream &f, string line)
   }
   if (line== "minimize" && Conversion != LPmin) {
     if (debug) printf("linear minimization is chosen.\n");
-    LPcost=new myTYPE[nn];
-    for (j=0;j<nn;j++) {
+    LPcost=new myTYPE[ninput];
+    for (j=0;j<ninput;j++) {
       (f) >> cost;
       LPcost[j]=cost;
       if (debug) cout << " cost[" << j << "] = "<< LPcost[j] <<"\n";
@@ -365,9 +376,31 @@ void ProcessCommandLine(ifstream &f, string line)
     Conversion=TopeListing;
     return;
   }
-  if (line== "optimize_CC" && !OptimizeOrderOn) {
-    if (DynamicWriteOn) printf("Optimize criss-cross variable order.\n");
-    OptimizeOrderOn=True;
+  if (line== "condensed_listing") {
+    CondensedListOn=True;
+    return;
+  }
+  if (line== "signpivot") {
+    SignPivotOn=True;
+    return;
+  }
+  if (line== "CMIalgorithm") {
+    if (DynamicWriteOn) printf("Use the combinatorial maximum improvement method.\n");
+    LPsolver=CombMaxImprove; SignPivotOn=True;
+    return;
+  }
+  if (line== "dual_simplex") {
+    if (DynamicWriteOn) printf("Use the dual simplex method.\n");
+    LPsolver=DualSimplex;
+    return;
+  }
+  if (line== "criss-cross") {
+    if (DynamicWriteOn) printf("Use the crss-cross method.\n");
+    LPsolver=CrissCross;
+    return;
+  }
+  if (line== "manual_pivot") {
+    ManualPivotOn=True;
     return;
   }
   if (line== "show_tableau" && !ShowSignTableauOn) {
@@ -421,7 +454,7 @@ void WriteRayRecord(ostream &f, RayRecord *RR)
     }
   }
   if (IncidenceOutput==IncCardinality) {
-    (f) << " " << set_card(RR->ZeroSet);
+    (f) << " : " << set_card(RR->ZeroSet);
   }
   (f).put('\n');
 }
@@ -436,7 +469,7 @@ void WriteRayRecord2(ostream &f, RayRecord *RR)
     (f) << RR->Ray[j];
   putchar('\n');
   (f) << " ZeroSet =";
-  WriteSetElements(f, RR->ZeroSet);
+  set_fwrite(f, RR->ZeroSet);
   (f).put('\n');
 }
 
@@ -549,6 +582,67 @@ char Sign(myTYPE val)
     else return '0'; 
 }
 
+char intSign(int val)
+{
+  if (val > 0) return '+';
+  else if ( val < 0) return '-';
+    else return '0'; 
+}
+
+void WriteSignAmatrix(ostream &f, SignAmatrix X,
+ rowindex OV, long bflag[], rowrange objrow, colrange rhscol)
+/* Write the sign matrix X. 
+   This works properly only for Nonhomogeneous inequality  */
+{
+  colrange j;
+  rowrange i,k,l;
+  
+  (f) << "      g|";
+  for (l=1; l<= mm; l++) {
+    j=OV[l];
+    if  (bflag[j] >0) { /* j is nonbasic variable */
+      (f).width(3);
+      (f) << j;
+    }
+  }
+  (f) << "\n";
+  for (k=1; k<= mm; k++) {
+    i=OV[k];
+    if (bflag[i]==0) {  /* i the objective variable */
+      (f) << "   f";
+      (f) << "  " << intSign(X[i-1][0]) << "|";   
+      for (l=1; l<= mm; l++) {
+        j=OV[l];
+        if  (bflag[j] >0) { /* j is nonbasic variable */
+          (f) << "  " << intSign(X[i-1][bflag[j]-1]);
+        }
+      }
+      (f) << "\n";
+    }
+  }
+  (f) << "  =====+";
+  for (j=1; j<=nn; j++) { 
+    (f) << "===";
+  }
+  (f) << "\n";
+  for (k=1; k<= mm; k++) {
+    i=OV[k];
+    if (bflag[i]!=0 && bflag[i]==-1) {  /* i is a basic variable */
+      (f).width(4); 
+      (f) << i;   
+      (f) << "  " << intSign(X[i-1][0]) << "|";   
+      for (l=1; l<= mm; l++) {
+        j=OV[l];
+        if  (bflag[j] >0) { /* j is nonbasic variable */
+          (f) << "  " << intSign(X[i-1][bflag[j]-1]);
+        }
+      }
+      (f) << "\n";
+    }
+  }
+  (f) << "\n";
+}
+
 void WriteSignTableau(ostream &f, Amatrix X, Bmatrix T,
  rowindex OV, long bflag[], rowrange objrow, colrange rhscol)
 /* Write the sign matrix of tableau  X.T.
@@ -616,16 +710,6 @@ void WriteBmatrix(ostream &f, Bmatrix T)
   f.put('\n');
 }
 
-void WriteSetElements(ostream &f, set_type S)
-{
-  rowrange i;
-
-  for (i = 1; i <= mm; i++) {
-    if (set_member(i, S))
-      (f) << " " << i;
-  }
-}
-
 void WriteIncidence(ostream &f, RayRecord *RR)
 {
   rowset cset;
@@ -636,22 +720,41 @@ void WriteIncidence(ostream &f, RayRecord *RR)
   switch (IncidenceOutput) {
 
   case IncCardinality:
-    (f) << " " << zcar;
+    (f) << " : " << zcar;
     break;
 
   case IncSet:
     if (mm - zcar >= zcar) {
-      (f) << " " << zcar;
-      WriteSetElements(f, RR->ZeroSet);
+      (f) << " " << zcar << " : ";
+      set_fwrite(f, RR->ZeroSet);
     } else {
       set_diff(cset, GroundSet, RR->ZeroSet);
-      (f) << " " << (zcar - mm);
-      WriteSetElements(f, cset);
+      (f) << " " << (zcar - mm) << " : ";
+      set_fwrite(f, cset);
     }
     break;
 
   case IncOff:
     break;
+  }
+  (f).put('\n');
+  set_free(&cset);
+}
+
+void WriteInputIncidence(ostream &f, Aincidence Aicd, rowrange i)
+{
+  set_type cset;
+  long zcar;
+
+  set_initialize(&cset,RayCount);
+  zcar = set_card(Aicd[i-1]);
+  if (RayCount - zcar >= zcar) {
+    (f) << " " << zcar << " :";
+    set_fwrite(f, Aicd[i-1]);
+  } else {
+    set_compl(cset, Aicd[i-1]);
+    (f) << " " << (zcar - RayCount) << " :";
+    set_fwrite(f, cset);
   }
   (f).put('\n');
   set_free(&cset);
@@ -757,12 +860,12 @@ void WriteRunningMode(ostream &f)
   }
   if (RestrictedEnumeration) {
     (f) << "*The equality option is chosen.\n* => Permanently active rows are:";
-    WriteSetElements(f,EqualitySet);
+    set_fwrite(f,EqualitySet);
     (f) << "\n";
   }
   if (RelaxedEnumeration) {
     (f) << "*The strict_inequality option is chosen.\n* => Permanently nonactive rows are:";
-    WriteSetElements(f,NonequalitySet);
+    set_fwrite(f,NonequalitySet);
     (f) << "\n";
   }
   if (PostAnalysisOn) {
@@ -824,13 +927,13 @@ void WriteRunningMode2(ostream &f)
     
     case LPmax:
       (f) <<  "maximize\n";
-      for (j=0; j<nn; j++) WriteNumber(f,LPcost[j]);
+      for (j=0; j<ninput; j++) WriteNumber(f,LPcost[j]);
       (f) << "\n";
       break;
 
     case LPmin:
       (f) <<  "minimize\n";
-      for (j=0; j<nn; j++) WriteNumber(f,LPcost[j]);
+      for (j=0; j<ninput; j++) WriteNumber(f,LPcost[j]);
       (f) << "\n";
       break;
 
@@ -850,12 +953,12 @@ void WriteRunningMode2(ostream &f)
   }
   if (RestrictedEnumeration) {
     (f) <<  "equality ";
-    WriteSetElements(f,EqualitySet);
+    set_fwrite(f,EqualitySet);
     (f) << "\n";
   }
   if (RelaxedEnumeration) {
     (f) <<  "strict_inequality ";
-    WriteSetElements(f,NonequalitySet);
+    set_fwrite(f,NonequalitySet);
     (f) << "\n";
   }
   if (PostAnalysisOn) {
@@ -889,6 +992,178 @@ void WriteTimes(ostream &f)
   (f) << "*                     = " <<  ptime_hour << "h " << ptime_minu << "m " << ptime_sec << "s\n";
 }
 
+boolean InputAdjacentQ(Aincidence Aicd, 
+  set_type RedundantSet, set_type DominantSet, 
+  rowrange i1, rowrange i2)
+/* Before calling this function, RedundantSet must be 
+   a set of row indices whose removal results in a minimal
+   nonredundant system to represent the input polyhedron,
+   DominantSet must be the set of row indices which are
+   active at every extreme points/rays.
+*/
+{
+  boolean adj=True;
+  rowrange i;
+  static set_type common;
+  static lastRayCount=0;
+
+  if (lastRayCount!=RayCount){
+    if (lastRayCount >0) set_free(&common);
+    set_initialize(&common, RayCount);
+    lastRayCount=RayCount;
+  }
+  if (set_member(i1, RedundantSet) || set_member(i2, RedundantSet)){
+    adj=False;
+    goto _L99;
+  }
+  if (set_member(i1, DominantSet) || set_member(i2, DominantSet)){
+  // dominant inequality is considered adjacencent to all others.
+    adj=True;
+    goto _L99;
+  }
+  set_int(common, Aicd[i1-1], Aicd[i2-1]);
+  i=0;
+  while (i<mm && adj==True){ 
+    i++; 
+    if (i!=i1 && i!=i2 && !set_member(i, RedundantSet) &&
+        !set_member(i, DominantSet) && set_subset(common,Aicd[i-1])){
+      adj=False;
+    }
+  }
+_L99:;
+  return adj;
+} 
+
+void WriteInputAdjacencyFile(ostream &f)
+{
+  RayRecord *RayPtr1, *RayPtr2;
+  rowrange i,k, r1, r2, elem;
+  colrange j;
+  long pos1, pos2, degree, scard;
+  boolean adj, redundant;
+  node *headnode, *tailnode, *newnode, *prevnode;
+  Aincidence Aicd;
+  rowset Ared;  /* redundant inequality set */
+  rowset Adom;  /* dominant inequality set */
+
+  WriteProgramDescription(f);
+  for(i=1; i<=mm; i++) set_initialize(&(Aicd[i-1]),RayCount); 
+  set_initialize(&Ared, mm); 
+  set_initialize(&Adom, mm); 
+  headnode=NULL; tailnode=NULL;
+  switch (Conversion) {
+  case IneToExt:
+    (f) << "*Adjacency List of input (=inequalities/facets)\n";
+    break;
+
+  case ExtToIne:
+    (f) << "*Adjacency List of input (=vertices/rays)\n";
+    break;
+
+  default:
+    break;
+  }
+  (f) <<  "*cdd input file : " << inputfile << " (" << minput << " x " << ninput << ")\n";
+  (f) <<  "*cdd output file: " << outputfile << "\n";
+  if (RayCount==0){
+    goto _L99;
+  }
+  LastRay->Next=NULL;
+  for (RayPtr1=FirstRay, pos1=1;RayPtr1 != NULL; RayPtr1 = RayPtr1->Next, pos1++){
+    scard=set_card(RayPtr1->ZeroSet);
+    elem = 0; i = 0;
+    while (elem < scard && i < mm){
+      i++;
+      if (set_member(i,RayPtr1->ZeroSet)) {
+        set_addelem(Aicd[i-1],pos1);
+        elem++;
+      }
+    }
+  }
+  for (i=1; i<=mm; i++){
+    if (set_card(Aicd[i-1])==RayCount){
+      f << "*row " << i << " is dominating.\n";
+      if (DynamicWriteOn) cout << "*row " << i << " is dominating.\n";
+      set_addelem(Adom, i);
+    }  
+  }
+  for (i=mm; i>=1; i--){
+    if (set_card(Aicd[i-1])==0){
+      redundant=True;
+      f << "*row " << i << " is redundant;dominated by all others.\n";
+      if (DynamicWriteOn) cout << "*row " << i << " is redundant;dominated by all others.\n";
+      set_addelem(Ared, i);
+    }else {
+      redundant=False;
+      for (k=1; k<=mm; k++) {
+        if (k!=i && !set_member(k, Ared)  && !set_member(k, Adom) && 
+            set_subset(Aicd[i-1], Aicd[k-1])){
+          if (!redundant){
+            f << "*row " << i << " is redundant;dominated by:"; 
+            if (DynamicWriteOn) cout << "*row " << i << " is redundant;dominated by:"; 
+            redundant=True;
+          }
+          f << " " << k;
+          if (DynamicWriteOn) cout << " " << k;
+          set_addelem(Ared, i);
+        }
+      }
+      if (redundant){
+        f << "\n";
+        if (DynamicWriteOn) cout << "\n";
+      }
+    }
+  }
+
+  (f) << "begin\n";
+  (f) << "  " << mm << "\n";
+  for (i=1; i<=mm; i++){
+    degree=0;
+    for (j=1; j<=mm; j++){
+      if (i!=j && InputAdjacentQ(Aicd, Ared, Adom, i, j)) {
+        degree++;
+        if (degree==1){
+          newnode=new node;
+          newnode->key=j;
+          newnode->next=NULL;
+          headnode=newnode;
+          tailnode=newnode;
+        }
+        else{
+          newnode=new node;
+          newnode->key=j;
+          newnode->next=NULL;
+          tailnode->next=newnode;
+          tailnode=newnode;
+        }
+      }
+    } /* end of j */
+    (f) << " " << i << " " << degree << " :";
+    for (newnode=headnode; newnode!=NULL; newnode=newnode->next, delete prevnode){
+      prevnode=newnode;
+      (f) << " " << newnode->key;
+    }
+    headnode=NULL;
+    (f) << "\n";
+  } /* end of i */
+  (f) << "end\n";
+
+// Input Incidence information won't be output if the following lines
+// are commented out 
+//  (f) << "\n*Incidences of input and output (dual of incidence information)\n";
+//  (f) << "*After <begin> three numbers are m1, m and output_size,\n";
+//  (f) << "*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).\n";
+//  (f) << "begin\n";
+//  (f) << "  " << mm << "  " << minput << "  " << RayCount << "\n";
+//  for (i=1; i<= mm ; i++) {
+//    WriteInputIncidence(f, Aicd, i);
+//  }
+//  (f) << "end\n";
+// up to here.
+
+_L99:;
+  for(i=1; i<=mm; i++) set_free(&(Aicd[i-1]));  
+}
 
 void WriteAdjacencyFile(ostream &f)
 {
@@ -897,16 +1172,16 @@ void WriteAdjacencyFile(ostream &f)
   boolean adj;
   node *headnode, *tailnode, *newnode, *prevnode;
 
+  WriteProgramDescription(f);
   headnode=NULL; tailnode=NULL;
   switch (Conversion) {
   case IneToExt:
-    if (AdjacencyOutput==OutputAdjacency)
-      (f) << "*Adjacency List of output (=vertices/rays)\n";
+    (f) << "*Adjacency List of output (=vertices/rays)\n";
     break;
+
   case ExtToIne:
-    if (AdjacencyOutput==OutputAdjacency)
-      (f) << "*Adjacency List of output (=inequalities=facets)\n";
-      break;
+    (f) << "*Adjacency List of output (=inequalities=facets)\n";
+    break;
 
   default:
     break;
@@ -973,10 +1248,12 @@ void WriteIncidenceFile(ostream &f)
     default:
       break;
   }
-  (f) << "*cdd input file : " << inputfile << "  " << minput << "  " << ninput << "\n";
+  (f) << "*cdd input file : " << inputfile << "  (" << minput << " x " << ninput << ")\n";
   (f) << "*cdd output file: " << outputfile << "\n";
+  (f) << "*After <begin>, three numbers are output_size, m and m1,\n";
+  (f) << "*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).\n";
   (f) << "begin\n";
-  (f) << FeasibleRayCount << "  " << minput << "  " << mm << "\n";
+  (f) << "  " << FeasibleRayCount << "  " << minput << "  " << mm << "\n";
   TempPtr = FirstRay;
   while (TempPtr != NULL) {
     if (TempPtr->feasible) {
@@ -1139,9 +1416,10 @@ void WriteProjResult(ostream &f, ostream &f_log, long *dbrow)
 
 void InitialWriting(ostream &f, ostream &f_log)
 {
+  WriteProgramDescription(f_log);
   (f_log) << "*Input File: " << inputfile << "(" <<minput << " x " << ninput << ")\n";
   (f_log) << "*Initial set of hyperplanes: ";
-  WriteSetElements(f_log, AddedHyperplanes);
+  set_fwrite(f_log, AddedHyperplanes);
   (f_log) << "\n";
   
   (f_log) << "begin\n";
@@ -1225,8 +1503,21 @@ void WriteLPResult(ostream &f, LPStatusType LPS, myTYPE optval,
   long j;
 
   time(&endtime);
-  (f) << "*cdd LP Solver (Criss-Cross Method) Result\n";  
+  WriteProgramDescription(f);
+  (f) << "*cdd LP Result\n";  
   (f) << "*cdd input file : " << inputfile << "  (" << minput << " x " << ninput << ")\n";
+  switch (LPsolver){
+    case DualSimplex:
+      (f) << "*LP solver: Dual Simplex\n"; break;
+
+    case CrissCross:
+      (f) << "*LP solver: Criss-Cross Method\n"; break;
+
+    case CombMaxImprove:
+      (f) << "*LP solver: Combinatorial Maximum Improvement Algorithm\n"; break;
+
+  }
+    (f) << "*LP status: a dual pair (x, y) of optimal solutions found.\n";
   if (Conversion==LPmax)
     (f) << "*maximization is chosen.\n";  
   else if (Conversion==LPmin)
@@ -1315,7 +1606,7 @@ void WriteSolvedProblem(ostream &f)
 {
   (f) << "*cdd input file : " << inputfile << "  ( " << minput << " x " << ninput << ")\n";
   (f) << "*The input data has been interpreted as the following.\n";
-  WriteAmatrix(f,AA,minput,ninput,Inequality);
+  WriteAmatrix(f,AA,minput,nn,Inequality);
   WriteRunningMode2(f);
 }
 

@@ -1,7 +1,7 @@
 Cross polytope of dimension 12
 The dual of 12 dim hypercube
 begin
-     4096     13    real
+     4096     13    integer 
   1  1  1  1  1  1  1  1  1  1  1  1  0
   1  0  1  1  1  1  1  1  1  1  1  1  0
   1  1  0  1  1  1  1  1  1  1  1  1  0

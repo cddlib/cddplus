@@ -10,3 +10,4 @@ begin
 end
 incidence
 adjacency
+input_adjacency

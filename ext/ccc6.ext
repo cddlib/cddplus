@@ -1,14 +1,14 @@
-* cdd+: Double Description Method in C++:Version 0.72 (April 16, 1995)
+* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
 * Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
 * Compiled for Floating-Point Arithmetic
 *Input File:ccc6.ine(31x16)
 *HyperplaneOrder: LexMin
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Hull computation is chosen.
-*Computation starts     at Sun Apr 16 17:04:02 1995
-*            terminates at Sun Apr 16 17:12:10 1995
-*Total processor time = 488 seconds
-*                     = 0h 8m 8s
+*Computation starts     at Fri Sep  8 17:14:49 1995
+*            terminates at Fri Sep  8 17:15:10 1995
+*Total processor time = 21 seconds
+*                     = 0h 0m 21s
 *Since hull computation is chosen, the output is a minimal inequality system
 *FINAL RESULT:
 *Number of Facets =210

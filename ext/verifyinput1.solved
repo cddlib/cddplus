@@ -1,0 +1,22 @@
+*cdd input file : verifyinput1.ine  ( 15 x 11)
+*The input data has been interpreted as the following.
+begin
+  15  11  integer
+ 0 1 1 1 1 0 0 0 0 0 0
+ 0 0 1 1 1 1 1 1 0 0 0
+ 0 1 0 1 1 1 0 0 1 1 0
+ 0 1 1 0 1 0 1 0 1 0 1
+ 0 1 1 1 0 0 0 1 0 1 1
+ 0 0 0 1 1 0 1 1 1 1 0
+ 0 0 1 0 1 1 0 1 1 0 1
+ 0 0 1 1 0 1 1 0 0 1 1
+ 0 1 0 0 1 1 1 0 0 1 1
+ 0 1 0 1 0 1 0 1 1 0 1
+ 0 1 1 0 0 0 1 1 1 1 0
+ 0 0 0 0 1 0 0 1 0 1 1
+ 0 0 0 1 0 0 1 0 1 0 1
+ 0 0 1 0 0 1 0 0 1 1 0
+ 0 1 0 0 0 1 1 1 0 0 0
+end
+lexmin
+hull

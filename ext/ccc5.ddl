@@ -1,3 +1,6 @@
+* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
 *Input File: ccc5.ine(15 x 11)
 *Initial set of hyperplanes:  6 7 8 9 10 11 12 13 14 15
 begin
@@ -12,7 +15,7 @@ end
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Hull computation is chosen.
 *set_intersection total#, effective#, loss# = 287  263  24
-*Computation starts     at Sun Apr 16 17:03:34 1995
-*            terminates at Sun Apr 16 17:03:49 1995
-*Total processor time = 15 seconds
-*                     = 0h 0m 15s
+*Computation starts     at Fri Sep  8 17:14:46 1995
+*            terminates at Fri Sep  8 17:14:47 1995
+*Total processor time = 1 seconds
+*                     = 0h 0m 1s

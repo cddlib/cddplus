@@ -1,0 +1,18 @@
+* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
+* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* Compiled for Floating-Point Arithmetic
+*Incidences of output(=vertices/rays) and input (=hyperplanes)
+*   for each output, #incidence and the set of hyperplanes containing it
+*   or its complement with its cardinality with minus sign
+*cdd input file : ex1.ine  (4 x 3)
+*cdd output file: ex1.ext
+*After <begin>, three numbers are output_size, m and m1,
+*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).
+begin
+  5  4  5
+ 2 :  3 4
+ 2 :  2 5
+ 2 :  2 3
+ 2 :  1 5
+ 2 :  1 4
+end
