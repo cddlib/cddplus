@@ -1,6 +1,6 @@
 /* cddpivot.C:  Pivoting Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.c : C-Implementation of the double description method for
@@ -12,6 +12,8 @@
 
 #include <fstream>
 #include <string>
+using namespace std;
+
 #include "cddtype.h"
 #include "cddrevs.h"
 
@@ -668,16 +670,18 @@ void FindDualFeasibleBasis(Amatrix X, Bmatrix T, rowset basis, rowset cobasis, r
      the procedure returns *found=True, *lps=LPSundecided and a dual feasible
      basis.   If the problem is dual infeasible, this returns
      *found=False, *lps=DualInconsistent and the evidence column *s.
+     It still can run infinitely and then stops with maxpivots. 
   */
   boolean phase1, dualfeasible=True,localdebug=False,chosen,stop;
   LPStatusType LPSphase1;
-  long pivots_p1=0;
+  long pivots_p1=0,maxpivots, maxpivfactor=10;
   rowrange i,k,rtemp,entering,leaving,msvar;
   colrange j,l,mmsave,ms=0,stemp;
   myTYPE val=0,purezero=0,maxcost=-1;
   static long lastnn=0;
   static Arow rcost;
 
+  maxpivots=maxpivfactor*nn;
   *found=True; *lps=LPSundecided; *s=0;
   if (debug) localdebug=True;
   mmsave=mm;
@@ -708,7 +712,7 @@ void FindDualFeasibleBasis(Amatrix X, Bmatrix T, rowset basis, rowset cobasis, r
       X[mm-1][j-1]=purezero;
       for (l=1; l<=nn; l++){
         if (NBIndex[l]>0) {
-          X[mm-1][j-1]-=X[NBIndex[l]-1][j-1];   // To make the auxiliary row (0,-1,-1,...,-1).
+          X[mm-1][j-1]-= X[NBIndex[l]-1][j-1];   // To make the auxiliary row (0,-1,-1,...,-1).
         }
       }
     }
@@ -824,6 +828,10 @@ void FindDualFeasibleBasis(Amatrix X, Bmatrix T, rowset basis, rowset cobasis, r
         }
         GausianColumnPivot2(X,T, rtemp, stemp);
         pivots_p1=pivots_p1+1;
+        if (pivots_p1 > maxpivots) {
+          stop=True; *lps=LPSundecided; *found=False;
+          if (localdebug) cout << "Dual simplex phase I failed (cycling?)\n";
+        }
         if (ShowSignTableauOn){ 
           WriteSignTableau(cout, X, T, OV, bflag, objrow, rhscol);
           WriteCurrentSolution(cout, X, T, objrow, rhscol, NBIndex);
@@ -1486,6 +1494,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
   myTYPE adet=1; /* abs value of the determinant of a basis */
   boolean localdebug=False;
 
+  *LPS=LPSundecided;
   maxpivots=maxpivfactor*nn;  /* maximum pivots to be performed before cc pivot is applied. */
   if (debug) localdebug=True;
   if (mlast!=mm || nlast!=nn){
@@ -1589,7 +1598,7 @@ _L88:
   FindDualFeasibleBasis(A1, BasisInverse, Basis, Cobasis, OrderVector, NBIndex,BasisFlag,
       OBJrow, RHScol, &s, &found, LPS, &pivots_p1);
   *iter+=pivots_p1;
-  if (!found){
+  if (*LPS!=LPSundecided && !found){
      *se=s;   
      // No dual feasible basis is found, and thus DualInconsistent.  Output the evidence column.
   }
@@ -1943,8 +1952,7 @@ void ShiftPointsAroundOrigin(ostream &f, ostream &f_log, Arow center)
 
   /* compute a center */
   f << "* Computing 2d coordinate-wise extremal points:\n* min(1) max(1) ... min(d) max(d) =";
-  if (DynamicWriteOn) cout << "* Computing 2d coordinate-wise extremal points:\n* min(1) max(1) ... min(d) max(
-d) =";
+  if (DynamicWriteOn) cout << "* Computing 2d coordinate-wise extremal points:\n* min(1) max(1) ... min(d) max(d) =";
   for (j=1; j <= nn; j++) {
     center[j-1]=0;
     i=1;

@@ -1,6 +1,6 @@
-1999-03-17
+2003-08-19
 ---------------------------------------
-PROGRAM cdd+ (version 0.76) README FILE
+PROGRAM cdd+ (version 0.77) README FILE
 ---------------------------------------
 1. The program  cdd+  is a C++ implementation of the Double Description 
 Method of Motzkin et al. for generating all vertices (i.e. extreme points)
@@ -23,34 +23,36 @@ it can be compiled for both rational (exact) arithmetic and
 floating point arithmetic. (Note that cdd runs on floating
 arithmetic only.) 
 
-2. What's new in Version 0.76?
+2. What's new in Version 0.77?
 
-Thanks to TU-Berlin's Polymake Team, cdd+ now runs with GNU's
-GMP rational library as well as with the GNU g++ Rational library.
-More specifically, Polymake Team (Ewgenij Gawrilow and Michael Joswig)
-wrote C++ wrappers "gmp_integer.cc" and "gmp_rational.cc" for GMP 
-which cdd+ can use instead of GNU's G++ Rational arithmetic library.
- 
-Since cddr+_gmp runs substantially faster 
-than cddr+_g++, any cdd+ user who needs exact arithmetic
-computation is strongly recommended to use cdd+ with GMP.
-One should be also aware that GMP-2.0.2 has known bugs and
-all the patches available from GMP-Homepage 
-(http://www.matematik.su.se/~tege/gmp/) should be applied.
-Even with all these troubles, its speed compensates them easily.
-How much faster?  It all depends on your data.  For kkd* polytopes
-included in cdd+, cddr+_gmp runs three to ten times faster than
-cddr+_g++.  For less complicated polytopes, the speedup might be modest
-but one can expect the gmp version runs always faster.
+This version is a minor revision over 076.  The main purpose was
+to revise the programs so that they can be complied with modern
+gcc compilers, like gcc 3.1.*.   Several people helped me create
+this version, in particular Francois Margot (Univ. Kentucky and
+IBM Watson, USA) provided a fix for 0.76a1.
+
+Since there are no new functions added to this version,
+the manual (cddman.tex) has not been rewritten and it is
+for the previous version 0.76.
+
+It now assumes that GNU GMP (http://www.swox.com/gmp/ )
+has been installed before cdd+ is complied.  Please ask your local
+system administrator whether GMP is stalled, and where it is installed. 
+You need to edit makefile according to the local environment.
+
+Please note that the development of cdd* has been shifted to its
+C-library version, cddlib.  It is more powerful because it can be called
+from your own programs, and it does not assume anything on the data.  It
+can deal (in principle) any input.  If you think that cdd+ does not
+work as you expected, please try the most recent version of cddlib.
+In particular, the LP solver in cdd+ is not reliable as the one in cddlib.
 
 
 3. The cdd+ package is in "tar"ed and "compress"ed format with name
 cdd+-***.tar.Z, where *** is the version number.  The standard
-anonymous ftp site for the package is
+web site for the package is
 
-     ftp site : ftp.ifor.math.ethz.ch
-     directory: pub/fukuda/cdd
-     file name: cdd+-***.tar.gz
+     web site : http://www.cs.mcgill.ca/~fukuda/soft/cdd_home/cdd.html 
 
 In order to unpack the package in a standard unix environment, type 
    
@@ -86,7 +88,7 @@ placed in a newly created sub-directory cdd+-*** :
      ine           A subdirectory containing sample inequality input files
      ext           A subdirectory containing sample points/rays input files
 
-     gmp_integer.cc, gmp_rational.cc
+     Integer.cc, Rational.cc, gmp_init.cc
                    Polymake's GMP wrappers in C++
 
      COPYING       GNU GENERAL PUBLIC LICENSE
@@ -132,9 +134,7 @@ for free software development is user's appreciation.
 
 For more information, contact
    Komei Fukuda
-   fukuda@ifor.math.ethz.ch
-   Zurich  :IFOR, ETH Zentrum, CH-8092 Zurich, Switzerland  
-   Lausanne:DMA, EPFL, Ch-1015 Lausanne, Switzerland
-   homepage: http://www.ifor.math.ethz.ch/staff/fukuda/fukuda.html
+   fukuda@cs.mcgill.ca
+   homepage: http://www.cs.mcgill.ca/~fukuda
 
 // END of cdd+.readme 

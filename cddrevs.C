@@ -1,6 +1,6 @@
 /* cddrevs.C:  Reverse Search Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76a1, June 8, 1999 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -12,6 +12,8 @@
 
 #include <fstream>
 #include <string>
+using namespace std;
+
 #include "cddtype.h"
 #include "cddrevs.h"
 
@@ -215,8 +217,9 @@ boolean Facet_Q2(topeOBJECT tope, rowrange ii, colindex NBIndex, Arow LPdsol)
     nlast=nn;
     firstcall=True;
   }
-  if (firstcall || Conversion==TopeListing) 
-    UsePrevBasis=False; else UsePrevBasis=True;
+//  if (firstcall || Conversion==TopeListing) 
+//    UsePrevBasis=False; else UsePrevBasis=True;
+  UsePrevBasis=False;
   ConversionSave=Conversion;
   Conversion=LPmax;
   RHScol=1;
@@ -245,6 +248,11 @@ boolean Facet_Q2(topeOBJECT tope, rowrange ii, colindex NBIndex, Arow LPdsol)
   if (s>0) GausianColumnPivot2(AA,BInv, ii, s);
   DualSimplexMaximize(cout, cout, AA, BInv, OBJrow, RHScol, UsePrevBasis,
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+  if (LPStatus!=Optimal){
+    if (DynamicWriteOn) cout << "The Dual Simplex failed.  Run the Criss-Cross method.\n";
+    CrissCrossMaximize(cout, cout, AA, BInv, OBJrow, RHScol, UsePrevBasis,
+    &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+  }
   if (localdebug) cout << ii << "-th LP solved with objective value =" << ov << 
     " RHS value = " << tempRHS << "  iter= " << LPiter << "\n";
   if ((ov - tempRHS) > zero) 

@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 20, 1999
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -12,6 +12,8 @@
 
 #include <fstream>
 #include <string>
+using namespace std;
+
 #include "cddtype.h"
 #include "cddrevs.h"
 
@@ -2066,75 +2068,79 @@ void AmatrixInput(boolean *successful)
     Error=FileNotFound;
   } 
   else {
-    ifstream reading(inputfile);
-    while (!reading.eof() && inputst!="begin")
-    {
-      reading >> inputst;
-      if (inputst=="V-representation"){
-        Conversion = ExtToIne; newformat=True;
-      } else if (inputst=="H-representation"){
-          Conversion =IneToExt; newformat=True;
-      }
-    }
-    reading >> minput;
-    reading >> ninput;
-    reading >> numbtype;
-    cout << "size = " << minput << " x " << ninput << "\nnumber type = " << numbtype << "\n";
-    SetNumberType(numbtype);
-    if (Error==ImproperExecutable) {
-      goto _L99;
-    } 
-    Inequality=ZeroRHS;
-    for (i=1; i<=minput && !decided; i++) {
-      if (InputNumberString=="rational" && OutputNumberString=="real"){
-        reading >> rvalue;
-        value=myTYPE(rvalue);
-      } else {
-        reading >> value;
-      }
-      if (FABS(value) > zero) {
-        Inequality = NonzeroRHS;
-        decided=True;
-      }
-      for (j=2; j<=ninput; j++) {
-        if (InputNumberString=="rational" && OutputNumberString=="real"){
-          reading >> rvalue;
-        } else {
-          reading >> value;
-        }
-      }
-      if (localdebug) printf("remaining data to be skipped:");
-      while (reading.get(ch) && ch != '\n') {
-        if (localdebug) cout << ch;
-      }
-      if (localdebug) putchar('\n');
-    }
-    if (Inequality==NonzeroRHS) {
-      printf("Nonhomogeneous system with  m = %5ld  n = %5ld\n", minput, ninput);
-      nn = ninput;
-    }
-    else {
-      printf("Homogeneous system with  m = %5ld  n = %5ld\n", minput, ninput);
-      nn = ninput-1;
-    }
-    if (nn > NMAX || minput > MMAX) {
-      Error = DimensionTooLarge;
-      goto _L99;
-    }
+     {
+	ifstream reading(inputfile);
+	while (!reading.eof() && inputst!="begin")
+	   {
+	      reading >> inputst;
+	      if (inputst=="V-representation"){
+		 Conversion = ExtToIne; newformat=True;
+	      } else if (inputst=="H-representation"){
+		 Conversion =IneToExt; newformat=True;
+	      }
+	   }
+	reading >> minput;
+	reading >> ninput;
+	reading >> numbtype;
+	cout << "size = " << minput << " x " << ninput << "\nnumber type = " << numbtype << "\n";
+	SetNumberType(numbtype);
+	if (Error==ImproperExecutable) {
+	   reading.close();
+	   return;
+	} 
+	Inequality=ZeroRHS;
+	for (i=1; i<=minput && !decided; i++) {
+	   if (InputNumberString=="rational" && OutputNumberString=="real"){
+	      reading >> rvalue;
+	      value=myTYPE(rvalue);
+	   } else {
+	      reading >> value;
+	   }
+	   if (FABS(value) > zero) {
+	      Inequality = NonzeroRHS;
+	      decided=True;
+	   }
+	   for (j=2; j<=ninput; j++) {
+	      if (InputNumberString=="rational" && OutputNumberString=="real"){
+		 reading >> rvalue;
+	      } else {
+		 reading >> value;
+	      }
+	   }
+	   if (localdebug) printf("remaining data to be skipped:");
+	   while (reading.get(ch) && ch != '\n') {
+	      if (localdebug) cout << ch;
+	   }
+	   if (localdebug) putchar('\n');
+	}
+	if (Inequality==NonzeroRHS) {
+	   printf("Nonhomogeneous system with  m = %5ld  n = %5ld\n", minput, ninput);
+	   nn = ninput;
+	}
+	else {
+	   printf("Homogeneous system with  m = %5ld  n = %5ld\n", minput, ninput);
+	   nn = ninput-1;
+	}
+	if (nn > NMAX || minput > MMAX) {
+	   Error = DimensionTooLarge;
+	   reading.close();
+	   return;
+	}
   
-    RestrictedEnumeration = False;
-    RelaxedEnumeration = False;
-    EqualityIndex=(long *)calloc(minput+2, sizeof *EqualityIndex);
-    for (i = 0; i <= minput+1; i++) EqualityIndex[i]=0;
+	RestrictedEnumeration = False;
+	RelaxedEnumeration = False;
+	EqualityIndex=(long *)calloc(minput+2, sizeof *EqualityIndex);
+	for (i = 0; i <= minput+1; i++) EqualityIndex[i]=0;
 
-    while (!reading.eof()) {
-      reading >> command;
-      if (debug) cout << command << "\n";
-      ProcessCommandLine(reading,command);
-    } 
-    reading.close();
+	while (!reading.eof()) {
+	   reading >> command;
+	   if (debug) cout << command << "\n";
+	   ProcessCommandLine(reading,command);
+	} 
+	reading.close();
+     }
 
-    reading.open(inputfile); 
+    ifstream reading(inputfile);
     found=False;
     while (!found)
     {
@@ -2146,7 +2152,8 @@ void AmatrixInput(boolean *successful)
       }
       else {
   	Error=ImproperInputFormat;
-  	goto _L99;
+	reading.close();
+	return;
       }
     }
     reading >> value1;
@@ -2181,14 +2188,16 @@ void AmatrixInput(boolean *successful)
     }  /*of i*/
     if (reading.eof()) {
       Error=ImproperInputFormat;
-      goto _L99;
+      reading.close();
+      return;
     }
     else{
       reading >> command;
       if (command!="end") {
         if (debug) cout << "'end' missing or illegal extra data:" << command << "\n";
    	  Error=ImproperInputFormat;
-  	   goto _L99;
+	  reading.close();
+	  return;
       }
     }
   
@@ -2227,7 +2236,6 @@ void AmatrixInput(boolean *successful)
     }
     SetInequalitySets(EqualityIndex);
     *successful = True;
-    _L99:
     reading.close();
   }
 }

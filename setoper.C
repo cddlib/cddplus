@@ -1,19 +1,21 @@
 /* setoper.C:
- * A set operation library 
- * created by Komei Fukuda, April 3, 1995
- * Last modified, June 19, 1996
+ A set operation library 
+ created by Komei Fukuda, April 3, 1995
+ Last modified, June 19, 1996
+ Modified for newer C++ standard, April 20, 2003 
 */
 
-#include <fstream.h>
+#include <iostream>
+#include <climits>
+
+using std::cout;
 
 extern "C" {
 #include "setoper.h"
 }
 
-#include <limits.h>
 #define SETBITS (sizeof(long) * CHAR_BIT)
 /* (Number of chars in a long) * (number of bits in a char) */
-
 
 /* Definitions for optimized set_card function 
    by David Bremner bremner@cs.mcgill.ca  

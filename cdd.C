@@ -1,7 +1,6 @@
 /* cdd.C: Main program of the sofware cdd+
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
-   Standard ftp site: ftp.ifor.math.ethz.ch, Directory: pub/fukuda/cdd 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd+ : C++-Implementation of the double description method for
@@ -31,8 +30,11 @@
    from the Pascal program pdd.p written by Komei Fukuda. 
 */
 
+
 #include <fstream>
 #include <string>
+using namespace std;
+
 #include "cddtype.h"
 #include "cddrevs.h"
 

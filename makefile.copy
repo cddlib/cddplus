@@ -1,46 +1,33 @@
-# Makefile for cdd+ compilation with gcc-2.8.*.
+# Makefile for cdd+ compilation with gcc-3.*.
 
-# You must use GNU g++ compiler of version 2.8.0 or higher
-# Use Makefile.2.7 when your compiler is older than gcc-2.8.0.
+# You must have GMP installed and use GNU g++ compiler of version 3.* .
 CC = gcc
 #CC = /usr/local/bin/gcc
 #CC = /bin/cc
 
-# Location of gnu c++ library libstdc++.a.  
-LIBDIR = /usr/local/lib 
-
-# Location of gnu g++-library include files.  
-INCLUDEDIR = /usr/local/include/g++
-
-# Select the first line to use GMP instead of gnu g++ Rational
-#GMPUSED = TRUE
-GMPUSED = FALSE
+# Location of gnu c++ library.  
+LIBDIR = /usr/lib 
+#LIBDIR = /usr/local/lib 
 
 # Location of gnu gmp library libgmp.a  
-GMPLIBDIR = /usr/local/lib 
+GMPLIBDIR = /usr/lib 
+#GMPLIBDIR = /usr/local/lib 
 
 # Location of gnu gmp-library include file gmp.h 
-GMPINCLUDEDIR = .
+GMPINCLUDEDIR = /usr/include
 #GMPINCLUDEDIR = /usr/local/include
 
 # Compiler optimization/debug options
-#OPTFLAGS = -g -O
-#OPTFLAGS = -g -pg -O
-OPTFLAGS = -O3
+#OPTFLAGS = -g -static -O
+#OPTFLAGS = -g -static -pg -O
+OPTFLAGS = -static -O3
 
 ########## You shouldn't have to change anything after this point ##########
 
-ifeq ($(GMPUSED),TRUE)
 RATLIB = gmp
 GMPFLAG = -DGMP
-RATOBJ = gmp_integer.o gmp_rational.o
-RATEXE = cddr+_gmp
-else
-RATLIB = g++
-GMPFLAG = 
-RATOBJ = 
-RATEXE = cddr+_g++
-endif
+RATOBJ = gmp_init.o Integer.o Rational.o
+RATEXE = cddr+
 
 CFLAGS = $(OPTFLAGS) -I$(INCLUDEDIR) -I$(GMPINCLUDEDIR) -I. $(GMPFLAG)
 
@@ -81,11 +68,14 @@ cddrevs_r.o: cddrevs.C cdd.h cddrevs.h cdddef.h cddtype.h
 cdd_r.o: cdd.C cdd.h cdddef.h cddtype.h cddrevs.h
 	$(CC) $(CFLAGS) -DRATIONAL -c -o cdd_r.o cdd.C
 
-gmp_integer.o: gmp_integer.cc gmp_integer.h
-	$(CC) $(CFLAGS) -c -o gmp_integer.o gmp_integer.cc 
+gmp_init.o: gmp_init.cc
+	$(CC) $(CFLAGS) -c -o gmp_init.o gmp_init.cc 
 
-gmp_rational.o: gmp_rational.cc gmp_rational.h 
-	$(CC) $(CFLAGS) -c -o gmp_rational.o gmp_rational.cc 
+Integer.o: Integer.cc
+	$(CC) $(CFLAGS) -c -o Integer.o Integer.cc 
+
+Rational.o: Rational.cc 
+	$(CC) $(CFLAGS) -c -o Rational.o Rational.cc 
 
 $(RATEXE): cdd_r.o $(RATOBJ) cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) cdd_r.o cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o $(RATOBJ) -o $(RATEXE) $(LIBS)

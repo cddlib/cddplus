@@ -1,6 +1,6 @@
 /* cdddef.h:  Definition file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -10,7 +10,7 @@
    the manual cddman.tex for detail.
 */
 
-#define MMAX      5002  /* USER'S CHOICE: max row size of A plus two */
+#define MMAX      50002  /* USER'S CHOICE: max row size of A plus two */
 #define NMAX      101   /* USER'S CHOICE: max column size of A plus one */
 
 #define rowsetsize MMAX   /* The size of the column index set */

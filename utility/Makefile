@@ -1,8 +1,8 @@
 # Makefile for utitlity programs of cdd-061.
 
 # Select ANSI C compiler
-CC = /usr/local/bin/gcc
-#CC = /bin/cc
+#CC = /usr/local/bin/gcc
+CC = /usr/bin/gcc
 
 # Location of include files
 INCLUDEDIR = .

@@ -239,7 +239,7 @@ void WriteAmatrixDual(Amatrix A, long m, long n, unsigned seed, int lptype)
   printf("!adjacency\n");
 }
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   long mm,nn,i,j;
   unsigned sd=1;
@@ -300,5 +300,6 @@ void main(int argc, char *argv[])
         WriteAmatrixDual(AA,mm,nn,sd,lptype);
       }
   }
+  return 1;
 }
 

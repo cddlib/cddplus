@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,7 +11,7 @@
 */
 
 #define COPYRIGHT   "Copyright (C) 1999, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.76a1 (June 8, 1999)"
+#define DDVERSION   "Version 0.77(August 19, 2003)"
 
 #ifdef RATIONAL
  #ifdef GMP
@@ -23,13 +23,20 @@
 #define ARITHMETIC  "Compiled for Floating-Point Arithmetic"
 #endif
 
-#include <time.h>
+#include <ctime>
+#include <iostream>
+#include <fstream>
+
+using std::string;
+using std::ifstream;
+using std::ofstream;
+
 
 #ifdef  RATIONAL
 typedef Rational myTYPE;
 #else
 typedef double myTYPE;
-#endif  RATIONAL
+#endif  // RATIONAL
 typedef Rational myRational;
 typedef int boolean;
 typedef long rowrange;

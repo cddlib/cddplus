@@ -4,11 +4,12 @@
  * A set operation library 
  * created by Komei Fukuda, April 3, 1995
  * Last modified, June 19, 1996
+ * Modified for newer C++ standard, April 20, 2003  
  */
 
-#include <fstream.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+
+using std::ostream;
 
 typedef unsigned long *set_type;  /* set type definition */
 

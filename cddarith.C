@@ -1,6 +1,6 @@
 /* cddarith.C:  Arithmetic Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
+   Version 0.77, August 19, 2003 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -12,6 +12,8 @@
 
 #include <fstream>
 #include <string>
+using namespace std;
+
 #include "cddtype.h"
 #include "cddrevs.h"
 
