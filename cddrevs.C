@@ -1,6 +1,6 @@
 /* cddrevs.C:  Reverse Search Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.76, March 17, 1999 
+   Version 0.76a1, June 8, 1999 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -202,7 +202,7 @@ boolean Facet_Q2(topeOBJECT tope, rowrange ii, colindex NBIndex, Arow LPdsol)
   boolean answer=True,localdebug=False;
   static colrange nlast=0;
   static Bmatrix BInv;
-  static firstcall=True, UsePrevBasis;
+  static boolean firstcall=True, UsePrevBasis;
   static ConversionType ConversionSave;
 
   if (nlast!=nn){

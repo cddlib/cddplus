@@ -11,7 +11,7 @@
 */
 
 #define COPYRIGHT   "Copyright (C) 1999, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.76 (March 17, 1999)"
+#define DDVERSION   "Version 0.76a1 (June 8, 1999)"
 
 #ifdef RATIONAL
  #ifdef GMP

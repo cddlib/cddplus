@@ -12,7 +12,7 @@ LIBDIR = /usr/local/lib
 # Location of gnu g++-library include files.  
 INCLUDEDIR = /usr/local/include/g++
 
-# Select the second line to use GMP instead of gnu g++ Rational
+# Select the first line to use GMP instead of gnu g++ Rational
 #GMPUSED = TRUE
 GMPUSED = FALSE
 
@@ -26,7 +26,7 @@ GMPINCLUDEDIR = .
 # Compiler optimization/debug options
 #OPTFLAGS = -g -O
 #OPTFLAGS = -g -pg -O
-OPTFLAGS = -O3
+OPTFLAGS = -O3 -static
 
 ########## You shouldn't have to change anything after this point ##########
 
@@ -87,7 +87,7 @@ gmp_integer.o: gmp_integer.cc gmp_integer.h
 gmp_rational.o: gmp_rational.cc gmp_rational.h 
 	$(CC) $(CFLAGS) -c -o gmp_rational.o gmp_rational.cc 
 
-$(RATEXE): cdd_r.o $(RATOBJ) cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o gmp_rational.o
+$(RATEXE): cdd_r.o $(RATOBJ) cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) cdd_r.o cddrevs_r.o cddio_r.o cddarith_r.o cddpivot_r.o setoper.o $(RATOBJ) -o $(RATEXE) $(LIBS)
 
 cddf+: cdd.o $(RATOBJ) cddrevs.o cddio.o cddarith.o cddpivot.o setoper.o
