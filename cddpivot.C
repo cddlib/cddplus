@@ -1,6 +1,6 @@
 /* cddpivot.C:  Pivoting Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995 
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.c : C-Implementation of the double description method for
@@ -121,14 +121,9 @@ myTYPE TableauEntry(Amatrix X, Bmatrix T, rowrange r, colrange s)
 {
   colrange j;
   myTYPE temp=0;
-  boolean localdebug=False;
   
-  temp=0;
-  if (localdebug) cout << "r = " << r << "   s=" << s << "\n";
   for (j=0; j< nn; j++) {
-    if (localdebug) cout << "temp = " << temp << "   j=" << j << "\n";
-    if (localdebug) cout << "X[r-1] = " << X[r-1][j] << "   T[j][s-1]=" << T[j][s-1] << "\n";
-    temp = temp + X[r-1][j] * T[j][s-1];
+    temp += X[r-1][j] * T[j][s-1];
   }
   return temp;
 }
@@ -146,13 +141,20 @@ void SelectPivot2(Amatrix X, Bmatrix T,
 {
   boolean stop;
   rowrange i,rtemp;
-  rowset rowexcluded;
+  static rowset rowexcluded;
   myTYPE Xtemp=0;
+  static rowrange mlast=0;
   boolean localdebug=False;
 
   if (debug) localdebug=True;
   stop = False;
-  set_initialize(&rowexcluded,mm);
+  if (mlast!=mm){
+    if (mlast>0) {
+      set_free(&rowexcluded);
+    }
+    set_initialize(&rowexcluded,mm);
+    mlast=mm;
+  }
   set_copy(rowexcluded,NopivotRow);
   if (localdebug) {
     switch (roworder) {
@@ -232,7 +234,6 @@ void SelectPivot2(Amatrix X, Bmatrix T,
       stop = True;
     }
   } while (!stop);
-  set_free(&rowexcluded);
 }
 
 void GausianColumnPivot1(Amatrix A1, Bmatrix T,
@@ -579,19 +580,25 @@ void SelectCrissCrossPivot2(Amatrix X, Bmatrix T, rowindex OV,
   }
 }
 
-void SelectDualSimplexPivot(Amatrix X, Bmatrix T, rowindex OV, 
+void SelectDualSimplexPivot(boolean Phase1, Amatrix X, Bmatrix T, rowindex OV, 
     colindex NBIndex, long bflag[], rowrange objrow, colrange rhscol,
     rowrange *r, colrange *s,
     boolean *selected, LPStatusType *lps)
 { /* selects a dual simplex pivot (*r, *s) if the current
      basis is dual feasible and not optimal. If not dual feasible,
-     the procedure returns *selected=False and *lps=LPSundecided.  
+     the procedure returns *selected=False and *lps=LPSundecided.
+     If Phase1=True, the RHS column will be considered as the negative
+     of the column of the largest variable (==mm).  For this case, it is assumed
+     that the caller used the auxiliary row (with variable mm) to make the current
+     dictionary dual feasible before calling this routine so that the nonbasic
+     column for mm corresponds to the auxiliary variable.
   */
   boolean colselected=False, rowselected=False, dualfeasible=True,localdebug=False;
   rowrange i,k;
   colrange j;
   myTYPE val=0, minval=0,rat=0, minrat=0;
-  static lastnn=0;
+  static long lastnn=0;
+  static myTYPE purezero=0;
   static Arow rcost;
 
   if (debug) localdebug=True; 
@@ -618,7 +625,10 @@ void SelectDualSimplexPivot(Amatrix X, Bmatrix T, rowindex OV,
       for (i=1; i<=mm; i++) {
         if (localdebug) cout << "checking the row var " << i<< "\n"; 
         if (i!=objrow && bflag[i]==-1) {  /* i is a basic variable */
-          val=TableauEntry(X,T,i,rhscol);
+          if (Phase1){
+            val=-TableauEntry(X,T,i,bflag[mm]); // for dual Phase I
+          } 
+          else {val=TableauEntry(X,T,i,rhscol);}
           if (localdebug) cout << "RHS val =  " << val << "\n"; 
           if (val < minval) {
             *r=i;
@@ -650,6 +660,186 @@ void SelectDualSimplexPivot(Amatrix X, Bmatrix T, rowindex OV,
   }
 }
 
+void FindDualFeasibleBasis(Amatrix X, Bmatrix T, rowset basis, rowset cobasis, rowindex OV, 
+    colindex NBIndex, long bflag[], rowrange objrow, colrange rhscol,
+    colrange *s, boolean *found, LPStatusType *lps, long *pivot_no)
+{ /* Find a dual feasible basis using Phase I of Dual Simplex method.
+     If the problem is dual feasible,
+     the procedure returns *found=True, *lps=LPSundecided and a dual feasible
+     basis.   If the problem is dual infeasible, this returns
+     *found=False, *lps=DualInconsistent and the evidence column *s.
+  */
+  boolean phase1, dualfeasible=True,localdebug=False,chosen,stop;
+  LPStatusType LPSphase1;
+  long pivots_p1=0;
+  rowrange i,k,rtemp,entering,leaving,msvar;
+  colrange j,l,mmsave,ms=0,stemp;
+  myTYPE val=0,purezero=0,maxcost=-1;
+  static long lastnn=0;
+  static Arow rcost;
+
+  *found=True; *lps=LPSundecided; *s=0;
+  if (debug) localdebug=True;
+  mmsave=mm;
+  mm=mm+1;  // increase mm by 1 temporally
+  if (lastnn != nn){
+    if (lastnn>0){
+      delete[] X[mm-1];
+      delete[] rcost;
+    }
+    X[mm-1]= new myTYPE[nn];   // create an auxiliary row
+    rcost= new myTYPE[nn];   // objective row work space
+    lastnn=nn;
+  }
+
+  ms=0;  // ms will be the index of column which has the largest reduced cost
+  for (j=1; j<=nn; j++){
+    if (j!=rhscol){
+      if (localdebug) cout << "checking the column " << j << "  var " <<NBIndex[j] << ".\n"; 
+      rcost[j-1]=TableauEntry(X,T,objrow,j);
+      if (localdebug) cout << "reduced cost =  " << rcost[j-1] << ".\n"; 
+      if (rcost[j-1] > maxcost) {maxcost=rcost[j-1]; ms = j; msvar=NBIndex[ms];}
+    }
+  }
+  if (maxcost > zero) dualfeasible=False;
+
+  if (!dualfeasible){
+    for (j=1; j<=nn; j++){
+      X[mm-1][j-1]=purezero;
+      for (l=1; l<=nn; l++){
+        if (NBIndex[l]>0) {
+          X[mm-1][j-1]-=X[NBIndex[l]-1][j-1];   // To make the auxiliary row (0,-1,-1,...,-1).
+        }
+      }
+    }
+    if (localdebug){
+      cout << "Auxiliary row =";
+      for (j=1; j<=nn; j++){
+        cout << " ( " << j << "):" << TableauEntry(X,T,mm,j); 
+      }
+      cout << "\n";
+//    WriteAmatrix(cout,X,mm,nn,Inequality);
+      WriteSignTableau(cout, X, T, OV, bflag, objrow, rhscol);
+    }
+
+    if (localdebug){
+      cout << "FindDualFeasibleBasis: curruent basis is not dual feasible.\n";
+      cout << "because of the column " << ms << " assoc. with var " << NBIndex[ms] 
+      << "  dual cost = " << maxcost<< ".\n";
+    }
+
+    // Pivot on (mm, ms) so that the dual basic solution becomes feasible
+    leaving=mm; entering=msvar;
+    set_addelem(cobasis, leaving);
+    set_delelem(cobasis, entering);
+    set_delelem(basis,leaving);
+    set_addelem(basis,entering);
+    bflag[leaving]=ms;
+    bflag[entering]=-1;
+    NBIndex[ms]=leaving;
+    if (localdebug) {
+      cout << "Phase I ini: nonbasis = "; set_write(cobasis);
+      cout << "\nPhase I ini: basis = "; set_write(basis);
+      cout << "\nPhase I ini: new nonbasic variable " << leaving << " has index " << bflag[leaving] << "\n";
+    }
+    GausianColumnPivot2(X,T, mm, ms);
+    pivots_p1=pivots_p1+1;
+    if (ShowSignTableauOn){
+      WriteSignTableau(cout, X, T, OV, bflag, objrow, rhscol);
+    }
+
+    phase1=True; stop=False;
+    do {   /* Dual Simplex Phase I */
+      chosen=False; LPSphase1=LPSundecided;
+      SelectDualSimplexPivot(phase1, X, T, OV, NBIndex, bflag,
+        objrow, rhscol, &rtemp, &stemp, &chosen, &LPSphase1);
+      if (!chosen) {
+        /* The current dictionary is terminal.  There are two cases:
+           TableauEntry(X,T,objrow,ms) is negative or zero.
+           The first case implies dual infeasible,
+           and the latter implies dual feasible but mm is still in nonbasis.
+           We must pivot in the auxiliary variable mm. */
+
+        myTYPE minval=0;
+        rtemp=0;
+        for (i=1; i<=mm; i++){
+          if (bflag[i]<0) { 
+             /* i is basic and not the objective variable */
+            val=TableauEntry(X,T,i,ms);  // auxiliary column
+            if (val < minval) {
+              rtemp=i;
+              minval=val;
+              if (localdebug) cout << "update minval with =" << minval << " rtemp = " << rtemp <<"\n";
+            }
+          }
+        }
+
+        leaving=rtemp; entering=mm;
+        set_addelem(cobasis, leaving);
+        set_delelem(cobasis, entering);
+        set_delelem(basis,leaving);
+        set_addelem(basis,entering);
+        bflag[leaving]=ms;
+        bflag[entering]=-1;
+        NBIndex[ms]=leaving;
+        if (localdebug) {
+          cout << "Phase I fin: nonbasis = "; set_write(cobasis);
+          cout << "\nPhase I fin: basis = "; set_write(basis);
+          cout << "\nPhase I fin: new nonbasic variable " << leaving << " has index " << bflag[leaving] << "\n";
+        }
+        GausianColumnPivot2(X,T, rtemp, ms);
+        pivots_p1=pivots_p1+1;
+        if (ShowSignTableauOn){
+          WriteSignTableau(cout, X, T, OV, bflag, objrow, rhscol);
+        }
+
+        if (TableauEntry(X,T,objrow,ms)<-zero){
+          if (localdebug){
+            cout << "Dual infeasible.\n";
+            cout << "obj-ms: " << TableauEntry(X,T,objrow,ms) << " zero = " << zero << "\n";
+          }
+          *found=False; *lps=DualInconsistent;  *s=ms;
+        }
+        stop=True;
+      } else {
+        entering=NBIndex[stemp];
+        leaving=rtemp;
+        if (localdebug) {
+          cout<< "Dual Phase I: pivot on (r,s) = (" 
+            << rtemp << ", " << stemp << ")\n";
+          cout<< "Dual Phase I: (leaving, entering) = (" 
+            << leaving << ", " << entering << ")\n";
+        }
+        set_addelem(cobasis, leaving);
+        set_delelem(cobasis, entering);
+        set_delelem(basis,leaving);
+        set_addelem(basis,entering);
+        bflag[leaving]=stemp;
+        bflag[entering]=-1;
+        NBIndex[stemp]=leaving;
+        if (localdebug) {
+          cout << "nonbasis = "; set_write(cobasis);
+          cout << "\nbasis = "; set_write(basis);
+          cout << "\nnew nonbasic variable " << leaving << " has index " << bflag[leaving] << "\n";
+        }
+        GausianColumnPivot2(X,T, rtemp, stemp);
+        pivots_p1=pivots_p1+1;
+        if (ShowSignTableauOn){ 
+          WriteSignTableau(cout, X, T, OV, bflag, objrow, rhscol);
+          WriteCurrentSolution(cout, X, T, objrow, rhscol, NBIndex);
+          cout << "Pivot on (" << leaving << ", " << entering << ")\n";
+        }
+        if (entering==mm) {
+          stop=True; 
+          if (localdebug) cout << "Dual Phase I: the auxiliary variable enter the basis, go to phase II\n";
+        }
+      }
+    } while(!stop);
+  }
+  mm=mmsave;
+  *pivot_no=pivots_p1;
+}
+
 int myTYPE2sign(myTYPE val)
 { int s;
 
@@ -662,8 +852,8 @@ int myTYPE2sign(myTYPE val)
 int long2sign(long val)
 { int s;
 
-  if (val > 0 ) s = 1;
-  else if (val < 0) s = -1;
+  if (val > (long)zero ) s = 1;
+  else if (val < (long)zero) s = -1;
     else s = 0;
   return s;
 }
@@ -857,7 +1047,7 @@ void OptimizeVarOrder(SignAmatrix SX,
 
 void CrissCrossMinimize(ostream &f, ostream &f_log,
    Amatrix A1,Bmatrix BasisInverse, 
-   rowrange OBJrow, colrange RHScol, LPStatusType *LPS,
+   rowrange OBJrow, colrange RHScol, boolean UsePrevBasis, LPStatusType *LPS,
    myTYPE *optvalue, Arow sol, Arow dsol, colindex NBIndex,
    rowrange *re, colrange *se, long *iter)
 {
@@ -865,7 +1055,26 @@ void CrissCrossMinimize(ostream &f, ostream &f_log,
    
    for (j=1; j<=nn; j++)
      AA[OBJrow-1][j-1]=-AA[OBJrow-1][j-1];
-   CrissCrossMaximize(f, f_log, A1,BasisInverse, OBJrow, RHScol, 
+   CrissCrossMaximize(f, f_log, A1,BasisInverse, OBJrow, RHScol, UsePrevBasis,
+     LPS, optvalue, sol, dsol, NBIndex, re,  se, iter);
+   *optvalue=-*optvalue;
+   for (j=1; j<=nn; j++){
+     dsol[j-1]=-dsol[j-1];
+     AA[OBJrow-1][j-1]=-AA[OBJrow-1][j-1];
+   }
+}
+
+void DualSimplexMinimize(ostream &f, ostream &f_log,
+   Amatrix A1,Bmatrix BasisInverse, 
+   rowrange OBJrow, colrange RHScol, boolean UsePrevBasis, LPStatusType *LPS,
+   myTYPE *optvalue, Arow sol, Arow dsol, colindex NBIndex,
+   rowrange *re, colrange *se, long *iter)
+{
+   colrange j;
+   
+   for (j=1; j<=nn; j++)
+     AA[OBJrow-1][j-1]=-AA[OBJrow-1][j-1];
+   DualSimplexMaximize(f, f_log, A1,BasisInverse, OBJrow, RHScol, UsePrevBasis, 
      LPS, optvalue, sol, dsol, NBIndex, re,  se, iter);
    *optvalue=-*optvalue;
    for (j=1; j<=nn; j++){
@@ -938,7 +1147,7 @@ void WriteCurrentSolution(ostream &f, Amatrix A1, Bmatrix Binv, rowrange OBJrow,
   myTYPE optvalue;
   rowrange i;
   colrange j;
-  static lastnn=0;
+  static long lastnn=0;
 
   if (lastnn != nn){
     if (lastnn>0){
@@ -964,7 +1173,7 @@ void WriteCurrentSolution(ostream &f, Amatrix A1, Bmatrix Binv, rowrange OBJrow,
 
 void CrissCrossMaximize(ostream &f, ostream &f_log,
    Amatrix A1,Bmatrix BasisInverse, 
-   rowrange OBJrow, colrange RHScol, LPStatusType *LPS,
+   rowrange OBJrow, colrange RHScol, boolean UsePrevBasis, LPStatusType *LPS,
    myTYPE *optvalue, Arow sol, Arow dsol, colindex NBIndex,
    rowrange *re, colrange *se, long *iter)
 /* 
@@ -1017,7 +1226,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
      set_initialize(&Redundancy, mm);
      for (i=0; i<mm; i++) SA[i]=new int[nn];
      /* initialize only for the first time or when a larger space is needed */
-     mlast=mm;
+     mlast=mm;nlast=nn;
   }
   *re=0; *se=0; *iter=0;
   rank = 0;
@@ -1054,7 +1263,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
   SetToIdentity(BasisInverse);
   if (localdebug) WriteBmatrix(cout,BasisInverse);
   if (ManualPivotOn){ 
-    ManualPivot(f,f_log,A1,BasisInverse,OBJrow,RHScol,LPS,optvalue,sol,dsol,NBIndex,re,se,iter);
+    ManualPivot(f,f_log,A1,BasisInverse,OBJrow,RHScol,LPS,optvalue,sol,dsol,NBIndex, re,se,iter);
     for (i=1; i<=mm; i++){ set_addelem(Basis,i);}
     for (j=1; j<=nn; j++){
       i=NBIndex[j];
@@ -1075,8 +1284,6 @@ When LP is dual-inconsistent then *se returns the evidence column.
         if (localdebug) {
           cout << "CC: find initial basis: nonbasis = ";   
           set_write(Cobasis); cout << "\n";
-          cout << "CC: find initial basis: basis = ";
-          set_write(Basis); cout << "\n";
         }
         BasisFlag[r]=s;   /* the nonbasic variable r corresponds to column s */
         NBIndex[s]=r;     /* the nonbasic variable on s column is r */
@@ -1096,7 +1303,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
   
   stop=False;
   ComputeRowOrderVector(OrderVec, HyperplaneOrder);
-  if (LogWriteOn) {
+  if (localdebug) {
     WriteLvector(f_log,OrderVec,L);
   }
   SetSignAmatrix(SA,A1,BasisInverse);
@@ -1134,11 +1341,6 @@ When LP is dual-inconsistent then *se returns the evidence column.
       }
     }
     chosen=False; *LPS=LPSundecided;
-    if (LPsolver==DualSimplex){
-      SelectDualSimplexPivot(A1, BasisInverse, OrderVec, NBIndex,BasisFlag,
-        OBJrow, RHScol, &r, &s, &chosen, LPS);
-      if (chosen) pivots_ds=pivots_ds+1;
-    } 
     if (!chosen && *LPS==LPSundecided) {
       if (LPsolver==CombMaxImprove || SignPivotOn) {
         SelectCrissCrossPivot1(SA, OrderVec, BasisFlag, 
@@ -1182,7 +1384,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
           set_addelem(FixedVariables, leaving);
         }
       }
-      if (LogWriteOn){
+      if (localdebug){
         WriteLvector(f_log,OrderVec,L);
         // f_log << "cobasis: "; set_fwrite(f_log,Cobasis); f_log << "\n";
       }
@@ -1201,7 +1403,7 @@ When LP is dual-inconsistent then *se returns the evidence column.
       GausianColumnPivot2(A1,BasisInverse, r, s);
       if (SignPivotOn) GausianColumnPivot1(A1,BasisInverse, SA, r, s);
       (*iter)++;
-      if (LogWriteOn) WriteCurrentSolution(f_log, A1, BasisInverse, OBJrow, RHScol, NBIndex);
+      if (localdebug) WriteCurrentSolution(f_log, A1, BasisInverse, OBJrow, RHScol, NBIndex);
       if (ShowSignTableauOn){ 
         WriteCurrentSolution(cout, A1, BasisInverse, OBJrow, RHScol, NBIndex);
         cout << "Pivot on (" << leaving << ", " << entering << ")\n";
@@ -1221,13 +1423,13 @@ When LP is dual-inconsistent then *se returns the evidence column.
       stop=True;
     }
   } while(!stop);
-  if (LogWriteOn){
+  if (localdebug){
     WriteLvector(f_log,OrderVec,L);
     // f_log << "cobasis: "; set_fwrite(f_log,Cobasis); f_log << "\n";
   }
   if (DynamicWriteOn && LogWriteOn){
-     cout << "LP solved with " << *iter << " pivots. (dual_simplex pivots =" << 
-       pivots_ds << ", criss-cross pivots =" << pivots_cc << ")\n"; 
+     cout << "LP solved with " << *iter << " pivots. (ds piv#=" << 
+       pivots_ds << ", cc piv#=" << pivots_cc << ")\n"; 
   }
   switch (*LPS){
   case Optimal:
@@ -1253,6 +1455,225 @@ When LP is dual-inconsistent then *se returns the evidence column.
       if (localdebug) cout << "dsol " << NBIndex[j] << " " <<dsol[j-1];
     }
     if (localdebug) cout << "CrissCrossSolve: LP is dual inconsistent.\n";
+    break;
+
+  default:break;
+  }
+}
+
+
+void DualSimplexMaximize(ostream &f, ostream &f_log,
+   Amatrix A1,Bmatrix BasisInverse, 
+   rowrange OBJrow, colrange RHScol, boolean UsePrevBasis, LPStatusType *LPS,
+   myTYPE *optvalue, Arow sol, Arow dsol, colindex NBIndex,
+   rowrange *re, colrange *se, long *iter)
+/* 
+When LP is inconsistent then *re returns the evidence row.
+When LP is dual-inconsistent then *se returns the evidence column.
+*/
+{
+  boolean stop, chosen, phase1, found;
+  long rank;
+  long pivots_ds=0, pivots_p1=0, pivots_pc=0, maxpivots, maxpivfactor=70;
+  rowrange i,r,entering,leaving;
+  colrange j,s;
+  static colset ColSelected;
+  static rowset RowSelected,Basis,Cobasis;
+  static rowindex BasisFlag;
+  static long mlast=0,nlast=0;
+  myTYPE adet=1; /* abs value of the determinant of a basis */
+  boolean localdebug=False;
+
+  maxpivots=maxpivfactor*nn;  /* maximum pivots to be performed before cc pivot is applied. */
+  if (debug) localdebug=True;
+  if (mlast!=mm || nlast!=nn){
+     if (mlast>0) { /* called previously with different mm */
+       if (localdebug) cout << "DualSimplex: deleting the old memory space with mlast = " << mlast << "\n";
+       delete[] BasisFlag;
+       set_free(&ColSelected);
+       set_free(&RowSelected);
+       set_free(&Basis);
+       set_free(&Cobasis);
+     }
+     if (localdebug) cout << "DualSimplex: allocating a new memory space with mm = " << mm<< "\n";
+     BasisFlag=new long[mm+2];  // one more element for an auxiliary variable
+     set_initialize(&Cobasis,mm+1);
+     set_initialize(&Basis,mm+1);
+     set_initialize(&RowSelected, mm+1);
+     set_initialize(&ColSelected, nn);
+     /* initialize only for the first time or when a larger space is needed */
+     mlast=mm;nlast=nn;
+  }
+  /* Initializing control variables. */
+  BasisFlag[OBJrow]= 0; /*  BasisFlag of the objective variable is 0, 
+    different from other basic variables which have -1 */
+  set_emptyset(RowSelected);
+  set_emptyset(ColSelected);
+  set_addelem(RowSelected, OBJrow);
+  set_addelem(ColSelected, RHScol);
+  *re=0; *se=0; *iter=0;
+
+  PreOrderedRun=True;
+  if (UsePrevBasis){
+    if (s=BasisFlag[OBJrow]>0){ /* OBJrow is in cobasis, and we must pivot it in. */
+      for (j=0;j<=mm+1;j++){if (j!=s) set_addelem(ColSelected,j);}
+      rank=nn-2;
+      if (localdebug) cout << "UsePrevBasis but the current basis does not contain OBJrow.\n";
+      set_copy(RowSelected,Cobasis);
+    } else {
+      if (localdebug){
+         cout << "UsePrevBasis. The current basis contains OBJrow and thus an LP basis.\n";
+        cout << " Current nonbasis = ";   
+        set_write(Cobasis); cout << "\n";
+      }
+      goto _L88;
+    }
+  } else {
+    if (localdebug) cout << "Do not UsePrevBasis.\n";
+    rank = 0;
+    set_emptyset(Cobasis);
+    set_emptyset(Basis);
+    for (j=0; j<=nn; j++) NBIndex[j]=0;
+    for (i=1; i<=mm+1; i++) {
+      BasisFlag[i]=0;
+      set_addelem(Basis,i);
+      BasisFlag[i]=-1;    /* basic variable has index -1 */
+      if (EqualityIndex[i]==-1){
+        if (DynamicWriteOn){ 
+          cout << "*Warning: strict_inquality option for row " << i << " is ignored for maximization/minimization\n";
+        }
+      }
+    }
+    SetToIdentity(BasisInverse);
+  }
+
+  stop = False;
+  do {   /* Find a LP basis */
+    SelectPivot2(A1, BasisInverse, MinIndex
+      , mm, RowSelected, ColSelected, &r, &s, &chosen);
+    if (localdebug && chosen) printf("Procedure FindBasis: pivot on (r,s) =(%ld, %ld).\n", r, s);
+    if (chosen) {
+      set_addelem(RowSelected, r);
+      set_addelem(ColSelected, s);
+      set_addelem(Cobasis, r);
+      set_delelem(Basis,r);
+      if (localdebug) {
+        cout << "DSimplex: find initial basis: nonbasis = ";   
+        set_write(Cobasis); cout << "\n";
+      }
+      BasisFlag[r]=s;   /* the nonbasic variable r corresponds to column s */
+      NBIndex[s]=r;     /* the nonbasic variable on s column is r */
+      if (localdebug) cout << "nonbasic variable " << r << " has index " << BasisFlag[r] << "\n";
+      rank++;
+      GausianColumnPivot2(A1,BasisInverse, r, s);
+      if (localdebug) {
+        WriteBmatrix(cout,BasisInverse);
+        WriteTableau(cout,A1,BasisInverse,Inequality);
+	cout << r << "th row added to the initial set (" << rank << "elem)\n";
+      }
+    } else {
+      stop=True;
+    }
+    if (rank==nn-1) stop = True;
+  } while (!stop);
+
+_L88:
+  stop=False;
+  if (ShowSignTableauOn){
+    WriteSignTableau(cout, A1, BasisInverse, OrderVector, BasisFlag, OBJrow, RHScol);
+  }
+
+  FindDualFeasibleBasis(A1, BasisInverse, Basis, Cobasis, OrderVector, NBIndex,BasisFlag,
+      OBJrow, RHScol, &s, &found, LPS, &pivots_p1);
+  *iter+=pivots_p1;
+  if (!found){
+     *se=s;   
+     // No dual feasible basis is found, and thus DualInconsistent.  Output the evidence column.
+  }
+  else {
+    do {   /* Dual Simplex Method */
+      chosen=False; *LPS=LPSundecided; phase1=False;
+      if (pivots_ds<maxpivots) {
+        SelectDualSimplexPivot(phase1, A1, BasisInverse, OrderVector, NBIndex, BasisFlag,
+        OBJrow, RHScol, &r, &s, &chosen, LPS);
+      }
+      if (chosen) pivots_ds=pivots_ds+1;
+      if (!chosen && *LPS==LPSundecided) {  
+        /* In principle this should not be executed because we already have dual feasibility
+           attained and dual simplex pivot should have been chosen.  This might occur
+           under floating point computation, or the case of cycling.
+        */
+        SelectCrissCrossPivot2(A1, BasisInverse, OrderVector, BasisFlag, 
+          OBJrow, RHScol, &r, &s, &chosen, LPS);
+        if (chosen) pivots_pc=pivots_pc+1;
+      }
+      if (chosen) {
+        entering=NBIndex[s];
+        leaving=r;
+        if (localdebug) {
+          cout<< "Phase 1: pivot on (r,s) = (" 
+            << r << ", " << s << ")\n";
+          cout<< "Phase 1: (leaving, entering) = (" 
+            << leaving << ", " << entering << ")\n";
+        }
+        set_addelem(Cobasis, leaving);
+        set_delelem(Cobasis, entering);
+        set_delelem(Basis,leaving);
+        set_addelem(Basis,entering);
+        BasisFlag[leaving]=s;
+        BasisFlag[entering]=-1;
+        NBIndex[s]=leaving;
+        if (localdebug) {
+          cout << "nonbasis = "; set_write(Cobasis);
+          cout << "\nbasis = "; set_write(Basis);
+          cout << "\nnew nonbasic variable " << leaving << " has index " << BasisFlag[leaving] << "\n";
+        }
+        GausianColumnPivot2(A1,BasisInverse, r, s);
+        (*iter)++;
+        if (ShowSignTableauOn){ 
+          WriteCurrentSolution(cout, A1, BasisInverse, OBJrow, RHScol, NBIndex);
+          cout << "Pivot on (" << leaving << ", " << entering << ")\n";
+        }
+      } else {
+        switch (*LPS){
+          case Inconsistent: *re=r;
+          case DualInconsistent: *se=s;
+          default: break;
+        }
+        stop=True;
+      }
+    } while(!stop);
+  }
+  if (DynamicWriteOn && LogWriteOn){
+     cout << "LP solved with " << *iter << " pivots. (ds piv#=" << 
+       pivots_ds << ", p1 piv#=" << pivots_p1;
+     if (pivots_pc > 0) cout << ", cc piv#=" << pivots_pc;
+     cout << ")\n";
+  }
+  switch (*LPS){
+  case Optimal:
+    for (j=1;j<=nn; j++) {
+      sol[j-1]=BasisInverse[j-1][RHScol-1];
+      dsol[j-1]=-TableauEntry(A1,BasisInverse,OBJrow,j);
+      *optvalue=TableauEntry(A1,BasisInverse,OBJrow,RHScol);
+      if (localdebug) cout << "dsol[" << NBIndex[j] << "]= " <<dsol[j-1] << "\n";
+    }
+    break;
+  case Inconsistent:
+    if (localdebug) printf("DualSimplexSolve: LP is inconsistent.\n");
+    for (j=1;j<=nn; j++) {
+      sol[j-1]=BasisInverse[j-1][RHScol-1];
+      dsol[j-1]=-TableauEntry(A1,BasisInverse,*re,j);
+      if (localdebug) cout << "dsol " << NBIndex[j] << " " <<dsol[j-1];
+    }
+    break;
+  case DualInconsistent:
+    for (j=1;j<=nn; j++) {
+      sol[j-1]=BasisInverse[j-1][*se-1];
+      dsol[j-1]=-TableauEntry(A1,BasisInverse,OBJrow,j);
+      if (localdebug) cout << "dsol " << NBIndex[j] << " " <<dsol[j-1];
+    }
+    if (localdebug) cout << "DualSimplexSolve: LP is dual inconsistent.\n";
     break;
 
   default:break;
@@ -1503,6 +1924,59 @@ void DualizeAA(Bmatrix T)
   }
   mm=mnew;  nn=nnew;
   _L99:;
+}
+
+void ShiftPointsAroundOrigin(ostream &f, ostream &f_log, Arow center)
+/* Shifting all points in AA so that the origin
+   lies in the (relative) interior of its convex hull
+*/
+{
+  long i,j,maxpoint,minpoint;
+  myTYPE maxvalue=0, minvalue=0, two=2;
+  boolean localdebug=False;
+
+  /* compute a center */
+  f << "* Computing 2d coordinate-wise extremal points:\n* min(1) max(1) ... min(d) max(d) =";
+  if (DynamicWriteOn) cout << "* Computing 2d coordinate-wise extremal points:\n* min(1) max(1) ... min(d) max(
+d) =";
+  for (j=1; j <= nn; j++) {
+    center[j-1]=0;
+    i=1;
+    maxpoint=i;maxvalue=AA[maxpoint-1][j-1];
+    minpoint=i;minvalue=AA[minpoint-1][j-1];
+    for (i=2; i <= mm; i++) {
+      if (maxvalue < AA[i-1][j-1]) {
+        maxpoint=i;maxvalue=AA[maxpoint-1][j-1];
+      }
+      if (minvalue > AA[i-1][j-1]) {
+        minpoint=i;minvalue=AA[minpoint-1][j-1];
+      }
+    }
+    center[j-1]=(maxvalue+minvalue)/two;
+    f << " " << minpoint << " " << maxpoint;
+    if (DynamicWriteOn) cout << " " << minpoint << " " << maxpoint;
+  }
+  f << "\n* Shifting all points w.r.t. the center (of 2d points) =\n* Point0 =";
+  for (j=2; j <= nn; j++) {
+    WriteNumber(f, center[j-1]);
+  }
+  f << "\n";
+  if (DynamicWriteOn) {
+    cout << "\n* Shifting all points w.r.t. the center (of 2d points) =\n* Point0 =";
+    for (j=2; j <= nn; j++) {
+      WriteNumber(cout, center[j-1]);
+    }
+    cout << "\n";
+  }
+
+  /* do shifting */
+  for (i=1; i <= mm; i++) {
+    for (j=2; j <= nn; j++) {
+      AA[i-1][j-1]-=center[j-1];
+      if (localdebug) WriteNumber(cout, AA[i-1][j-1]);
+    }
+    if (localdebug) cout << "\n";
+  }
 }
 
 void EnlargeAAforInteriorFinding(void)

@@ -1,72 +1,69 @@
 % The name of this file: cddman.tex
 % written by by Komei Fukuda
 % December 14, 1993
-% Revised September 6, 1995
+% Revised June 21, 1996
 %
-\documentstyle[11pt]{article}
-\renewcommand{\baselinestretch}{1.0}
+\documentclass[11pt]{article}
+\usepackage{html}
+\renewcommand{\baselinestretch}{1}
+\renewcommand{\arraystretch}{1.2}
 \setlength{\oddsidemargin}{8mm}
 \setlength{\textwidth}{16cm}
-\setlength{\topmargin}{0mm}
-\setlength{\textheight}{23cm}
-\setlength{\headsep}{0in}
-\setlength{\headheight}{0pt}
-
-\pagestyle{empty}
+\setlength{\topmargin}{-5mm}
+\setlength{\textheight}{235mm}
+%\setlength{\headsep}{0in}
+%\setlength{\headheight}{0pt}
+\pagestyle{plain}
 
 \begin{document}
-
-.\vspace{20mm}
-
-\begin{center}
-
-\vspace{20mm}
-
-{\LARGE cdd+ Reference Manual}
-
-\vspace{20mm}
-
-{\Large Komei Fukuda\\
-   Institut fur Operations Research\\ 
-   ETH Zentrum, CH-8092 Zurich, Switzerland\\  
-    fukuda@ifor.math.ethz.ch\\
-  and\\
-   University of Tsukuba, Tokyo, Japan\\
-  fukuda@gssm.otsuka.tsukuba.ac.jp
+\title{cdd+ Reference Manual}
+\author{
+Komei Fukuda \\
+Institute for Operations Research\\
+ETH-Zentrum, CH-8092 Zurich, Switzerland\\
+fukuda@ifor.math.ethz.ch \\and\\
+GSSM, University of Tsukuba, Tokyo, Japan\\
+fukuda@gssm.otsuka.tsukuba.ac.jp
 }
+\date{ (cdd+ Version 0.74,  June 17, 1995)}
 
-\vspace{20mm}
-{\Large (cdd+ Version 0.73,  September 6, 1995)}
+\maketitle
 
-{\Large (Manual  Version  September 6, 1995)}
-
-\end{center}
-
-\newpage
-\pagestyle{plain}
-\setcounter{page}{1} 
-
-\begin{center}
-
-{\Large cdd+ Reference Manual}
-
-\bigskip
-{\large Komei Fukuda\\
-   fukuda@ifor.math.ethz.ch  or  fukuda@gssm.otsuka.tsukuba.ac.jp\\
-    Institut fur Operations Research, 
-   ETH Zentrum, CH-8092 Zurich, Switzerland,\\  
-   and  University of Tsukuba, Tokyo, Japan}
-
-\bigskip
-{\large (cdd+ Version 0.73,  September 6, 1995)}
-
-\end{center}
+\section{What's new?}
+If you are a new user of cdd+ please read Section \ref{INTRODUCTION} (Introduction) first.
+The version 0.74 has several improvements.  
+\begin{description}
+\item[(1)] The first one, which is not an additional
+function, is some changes in default output file names.  In particular, each different
+function (transformation) generates a file whose name extension
+ represents the transformation, see Section~\ref{HOWTO}.
+The changes are made to reduce possible confusion when one uses cdd+
+for many different purposes.  We are about to release
+a collection of volume computation codes \cite{befl-cevcm-95} for convex polytopes 
+for which our new file naming rules are important. 
+\item[(2)] Linear programming algorithms have been updated, and now the default
+algorithm (dual simplex method) works efficiently for dense LP's with many constraints
+and few variables.
+\item[(3)] Because of improvement (2), the redundancy removal functions (facet\_listing,
+vertex\_listing) and the tope\_listing function work much better than before.
+In case that input contains many redundant inequalities or points,
+the vertex enumeration or convex hull computation might be more
+efficient if one removes redundancy from input first.
+\item[(4)] The floating-point executable cddf+ can now read rational
+data (of form $p / q$) and compute with floating-point arithmetic.
+\item[(5)] We added new options ``facet\_listing\_external'' and ``vertex\_listing\_external'' to
+check with a large external file whether adding each of the external input data
+ to the input file data changes the input polytope or not.  These are useful
+when one wish to remove redundancy from a large input data
+(say, of few million inequalities or points in moderate dimensions) that
+cannot fit in physical memory of usual computers.
+\end{description}
 
 \section{Introduction} \label{INTRODUCTION}
 
 The program  cdd+  (cdd, respectively)   is 
 a C++  (ANSI C) implementation of 
-the Double Description Method~\cite{MRTT}
+the Double Description Method~\cite{mrtt-ddm-53}
 for generating all vertices (i.e. extreme points)
 and extreme rays of a general 
 convex polyhedron given by a system of linear inequalities:
@@ -74,17 +71,10 @@ convex polyhedron given by a system of linear inequalities:
    P = \{ x  \in R^d:  A  x  \le  b \}
 \]
 where $A$ is an $m \times d$ real matrix and $b$ is a real
-$m$ dimensional vector.
+$m$ dimensional vector.   See, \cite{fp-ddmr-95} for
+an efficient implementation of the double description
+method which is employed in cdd+.
 
-The program cdd+ is a C++ program converted from the ANSI C
-program cdd.  One major advantage of this C++-version over the C version is
-that it can be compiled for both rational (exact) arithmetic and 
-floating point arithmetic.  Note that cdd runs on floating
-arithmetic only.  Since cdd+ uses GNU g++ library, in particular 
-Rational library, one needs a recent (2.6.0 or higher) gcc compiler
-and g++-lib.  One should be also warned that the computation
-can be considerably  (10 - 100 times) slower if the rational
-arithmetic is used.
 
 One useful feature of  cdd+ (and cdd) is its capability
 of handling the dual (reverse)  problem without any transformation
@@ -98,12 +88,28 @@ $P = conv(v_1,\ldots,v_n) +  nonneg(r_1,\ldots,r_s)$.
 As we see in this manual, the computation can be done
 in straightforward manner.  There is one assumption for the input
 for hull computation: the polyhedron must be full-dimensional.
-See the ^^ ^^ hull" option in Section~\ref{OPTIONS}.
+See the ``hull'' option in Section~\ref{OPTIONS}.
+
+Besides these basic functions, cdd+ can solve the general
+linear programming (LP) problem to maximize (or minimize) a linear
+function over polyhedron $P$.   It is useful mainly for solving 
+dense LP's with large $m$ (say, up to few hundred thousands) and small $d$ 
+(say, up to 30).
+
+The program cdd+ is a C++ program converted from the ANSI C
+program cdd.  One major advantage of this C++-version over the C version is
+that it can be compiled for both rational (exact) arithmetic and 
+floating point arithmetic.  Note that cdd runs on floating
+arithmetic only.  Since cdd+ uses GNU g++ library, in particular 
+Rational library, one needs a recent (2.6.0 or higher) gcc compiler
+and g++-lib.  One should be also warned that the computation
+can be considerably  (10 - 100 times or even more) slower if the rational
+arithmetic is used.
 
 The program cdd+ (and cdd) reads input and writes output in 
 {\em Polyhedra format\/} which was defined by David Avis and
 the author.  The program called rs developed by David Avis is
-a C-implementation of the reverse search algorithm~\cite{AF} 
+a C-implementation of the reverse search algorithm~\cite{af-pachv-92} 
 for the same enumeration purpose, and it conforms to Polyhedra format as well.
 Hopefully, this compatibility of the two programs
 enables users to use both programs for the same input files
@@ -116,7 +122,8 @@ tends to be efficient for nondegenerate or slightly
 degenerate problems.
 
 Among the hardest problems that could be
-solved (in floating-point arithmetic) by cdd+ is a 21-dimensional hull problem given by 64 
+solved (in floating-point arithmetic) by cdd+ is a 
+21-dimensional hull problem given by 64 
 vertices. This polytope, known as the {\em complete
 cut polytope on 7 points\/}, has exactly 116,764 facets
 and some of facets contain many vertices. 
@@ -125,7 +132,7 @@ to compute the facets exactly on a SUN SparkServer 1000.
 The input file (ccp7.ine) of this polytope is
 included in the distribution.  A considerably easier
 problem is ccc7.ine which is a variation of the problem 
-(see e.g. \cite{G}).
+(see e.g. \cite{g-afccn-90}).
 
 The size of an input file hardly indicates the degree of 
 hardness of its vertex/ray enumeration.  While this program
@@ -135,15 +142,17 @@ the computation time 1-2 minutes on a fast workstation,
 a 8-dimensional problem (mit729-9.ine) with 729 inequalities
 can be extremely hard.  It takes two days to compute all
 (only 4862) vertices by a fast SUN SparkServer 1000.  The latter problem arises
-from the ground state analysis of a ternary alloy model, see \cite{CGAF}.
+from the ground state analysis of a ternary alloy model, see \cite{cgaf-gstfl-94}.
 Both input files are included in the distribution.  
 
 Although the program can be used for nondegenerate inputs,
 it might not be very efficient.  For nondegenerate inputs, 
-other available programs, such as the reverse search code rs or
+other available programs, such as the reverse search code lrs or
 qhull (developed by the Geometry Center),
 might be more efficient.  See Section~\ref{CODES} 
-for pointers to these codes.
+for pointers to these codes.  
+The paper \cite{abs-hgach-95} contains many interesting results on polyhedral
+computation and experimental results on cdd+, lrs, qhull and porta.
 
 This program can be distributed freely under the GNU GENERAL PUBLIC LICENSE.
 Please read the file COPYING carefully before using.
@@ -152,14 +161,31 @@ I will not take any responsibility of any problems you might have
 with this program.  But I will be glad to receive bug reports or suggestions
 at the e-mail addresses above.  Finally, if cdd+ turns out to be useful, 
 please kindly inform to me  what purposes cdd has been used for. 
-I will be happy to include an application description in future
+I will be happy to include a list of applications in future
 distribution  if I receive  enough replies.
 The most powerful support for free software development
 is user's appreciation and collaboration.
 
-\section{Polyhedra Input and Output Format} \label{FORMAT}
+\section{Polyhedra H- and V-Formats} \label{FORMAT}
 \bigskip
-Polyhedra input format is quite simple:
+Every convex polyhedron has two representations, one as
+the intersection of finite halfspaces and the other
+as Minkowski sum of the convex hull of finite points
+and the nonnegative hull of finite directions.  These are
+called H-representation and V-representation, respectively.
+
+Naturally there are two basic Polyhedra formats, 
+H-format for  H-representation and V-format for
+V-representation.    These two formats are designed
+to be almost indistinguishable, and in fact, one can
+almost pretend one for the other.   There is some asymmetry
+arising from the asymmetry of two representations.
+
+First we start with the halfspace representation.
+Let $A$ be an $m \times d$ matrix, and let $b$ be a column $m$-vector.
+The Polyhedra format  ({\em  H-format} )  of 
+the system $ A x \le b$ of $m$ inequalities in $d$ variables
+$x =(x_1, x_2, \ldots, x_d)^T$ is
 
 \begin{tabular}{ccl}
 \\ \hline
@@ -176,7 +202,7 @@ Polyhedra input format is quite simple:
 where numbertype can be one of integer, rational or real.
 When rational type is selected, each component
 of $b$ and $A$ can be specified by the usual integer expression 
-or by the rational expression ^^ ^^ $p / q$"  or  ^^ ^^ $-p / q$" where
+or by the rational expression ``$p / q$''  or  ``$-p / q$'' where
 $p$ and $q$ are arbitrary long positive integers (see the example
 input file rational.ine).
 There is one restriction in the current polyhedra format: 
@@ -188,7 +214,10 @@ the last $(d+1)$ rows be chosen as the initial set of
 $(d+1)$ rows for the double description algorithm.
 See {\bf initbasis\_at\_bottom} option in Section~\ref{OPTIONS}.
 
-Polyhedra output format is quite similar to input format:
+Now we introduce  Polyhedra  {\em V-format}.  Let $P$ be 
+represented by $n$ extreme points and $s$ rays as 
+$P = conv(v_1,\ldots,v_n) +  nonneg(r_1,\ldots,r_s)$.
+Then the Polyhedra V-format for $P$ is defined as
 
 \begin{tabular}{ccl}
 \\ \hline
@@ -201,61 +230,82 @@ Polyhedra output format is quite similar to input format:
  $0$ & $r_1$  & \\
  $\vdots$ & $\vdots$  & \\
  $0$ & $r_s$  & \\
-\multicolumn{3}{l} {\bf end}\\  \hline
+\multicolumn{3}{l} {\bf end}\\
+\multicolumn{3}{l} {hull}\\  \hline
 \end{tabular}
 
 \bigskip
 \noindent
-where $v_1, \ldots, v_n$ are the vertices and
-$r_1, \ldots, r_s$ are the extreme rays of the
-polyhedron $P$.  Here we do not require that
-the vertex list and the ray list are output
+Here we do not require that
+vertices and rays are listed
 separately; they can appear mixed in arbitrary
-order.
+order.   The option ``hull'' must be set for every V-format.
 
+
+It is strongly suggested to use the following rule for naming
+H-format files and V-format files:   
+\begin{description}
+\item[(a)] use the filename  extension ``.ine'' for H-files (where ine stands for inequalities), and 
+\item[(b)]  use the filename  extension ``.ext'' for V-files (where ext stands for extreme points/rays). 
+\end{description}
+
+The program cdd+ does two transformations, one from an H-format
+to a V-format, and the reverse.    While an input file (in H-format or V-format)
+can have redundant information, cdd+ output a minimal representation
+(in V-format or H-format).
 
 For example, let $P$ be the following unbounded 3-dimensional 
-polyhedron given by
+H-polyhedron given by
 \[
    P = \{ x  \in R^3:
-    1\le x_1 \le 2, \; 1 \le x_2 \le 2, \; 1 \le x_3\},
+    1\le x_1 \le 2, \; 1 \le x_2 \le 2, \; 1 \le x_3,  \; x_1 + x_2 \le 4 \},
 \]
-which is a 3-cube without one ^^ ^^ lid". For finding all
+which is a 3-cube without one ``lid''.   The last inequality is redundant
+because it is implied by $x_1 \le 2$ and $x_2 \le 2$.
+For finding all
 vertices and extreme rays, the input file for cdd+ is
 
 \begin{verbatim}
 file name: ucube.ine
 3 cube without one "lid"
 begin
-    5      4    integer
+    6      4    integer
   2   -1   0   0
   2    0  -1   0
  -1    1   0   0
  -1    0   1   0
  -1    0   0   1
+  4   -1  -1   0
 end
 incidence
 adjacency
 input_adjacency
+input_incidence
 \end{verbatim}
 
-The meaning of options ^^ ^^ incidence", ^^ ^^ adjacency"
-and ^^ ^^ input\_adjacency" 
+The meaning of options ``incidence'', ``adjacency''
+``input\_adjacency'' and ``input\_incidence'' 
 will be explained in Section~\ref{OPTIONS}.
 After you run cddf+ (the floating-arithmetic version of cdd+) 
 with this input file, you will get
-an output file, say ucube.ext, which looks like:
+an output file ucube.ext  which is the minimal V-representation
+of the polyhedron:
 
 \begin{verbatim}
-* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
-* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
+* cdd+: Double Description Method in C++:Version 0.74 (June 17, 1996)
+* Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch
 * Compiled for Floating-Point Arithmetic
-*Input File:ucube.ine(5x4)
+*Input File:ucube.ine(6x4)
 *HyperplaneOrder: LexMin
 *Degeneracy preknowledge for computation: None (possible degeneracy)
 *Vertex/Ray enumeration is chosen.
-*Computation starts     at Fri Aug 11 14:46:45 1995
-*            terminates at Fri Aug 11 14:46:45 1995
+*Output adjacency file is requested.
+*Input adjacency file is requested.
+*Output incidence file is requested
+*Input incidence file is requested.
+*Computation completed at Iteration 6.
+*Computation starts     at Sun Jun 17 16:40:32 1996
+*            terminates at Sun Jun 17 16:40:32 1996
 *Total processor time = 0 seconds
 *                     = 0h 0m 0s
 *FINAL RESULT:
@@ -278,22 +328,22 @@ information on the name of input file, and the options
 chosen to run the program which will be explained in
 the next section.  
 
-Finally the ^^ ^^ hull" option is  set for
-the output file so that if you run cdd+ with this output file,
+Now, if you run cdd+ with this output file ucube.ext,
 cdd+ will perform the convex hull operation to recover 
 essentially the original input inequality system.  Note that
 this back-and-forth transformation of a polyhedron works
-only when the polyhedron is full dimensional and contans
+only when the polyhedron is full dimensional and contains
 at least one vertex.
 
 \section{Options}  \label{OPTIONS}
 
 The following options are available for cdd.  These options are
-set if they appear in input file after the ^^ ^^ end" command.
+set if they appear in input file after the ``end'' command.
 Independent options can be set simultaneously, but each option
 must be written separately in one line, and  two options
 should not be written in one line.  When two or more non-independent
 options are specified, the last one overrides the others.
+Also note that options are case-sensitive.
 
 \begin{description}
 
@@ -302,7 +352,7 @@ When this option is chosen, the program cdd
 will do the reverse operation.   That is, the input is assumed to
 be a set of points and directions (rays).  When this option is set,
 it is required that each data line must start with 
-either ^^ ^^ 1" or ^^ ^^ 0", meaning points and rays, respectively.
+either ``1'' or ``0'', meaning points and rays, respectively.
 More specifically, if the input file is of form
 
 \begin{tabular}{ccl}
@@ -329,7 +379,7 @@ to represent $P$.
 \item[verify\_input] option\\
 When this option is chosen, the program will
 output the input problem as cdd+ interpreted.  
-The default output  file is ^^ ^^ *.solved". 
+The default output  file is ``*.solved''. 
 This option helps user to verify what problem
 is actually solved.  The default for this option is off.
 See the sample files verifyinput1.ine and verifyinput2.ine
@@ -351,36 +401,47 @@ This can be useful when the user does not know which hyperplane order
 (mincutoff, maxcutoff, mixcutoff, lexmin, lexmax, minindex, random)
 is efficient for computation.
 
-\item[incidence, \#incidence] options\\
-When the {\bf incidence} option is selected, the incidence relations between
-the vertices/rays and the inequalities will be output
-in a separate file (*.icd).  Here, a vertex is said to be 
+\item[incidence, input\_incidence,  \#incidence] options\\
+When the {\bf incidence} option is selected, the incidence relation for
+each {\bf output} with respect to input will be generated.    The default filename
+is *.icd  if {\bf output} is inequalities (i.e. *.ine), and *.ecd  
+\footnote {In earlier versions, *.icd was used for the new *.ecd file.}
+if {\bf output} is extreme points and
+rays (i.e. *.ext).
+
+When the {\bf input\_incidence} option is selected, the incidence relation for
+each {\bf input} with respect to output will be generated.    The default filename
+is *.icd  if {\bf input} is inequalities (i.e. *.ine), and *.ecd  
+if {\bf input} is extreme points and
+rays (i.e. *.ext).  This option is newly added to Version 0.74.
+
+Here, an extreme point is said to be 
 {\em incident with\/} an inequality if the inequality is satisfied by equality.
 An extreme ray $r$ is said to be {\em incident with\/} 
-an inequality $a^T \; x \le b$ if  $a^T \; r = 0$.  For example,
+an inequality $a^T \; x \le b$ if  $a^T \; r = 0$.  
+
+For example,
 since the incidence option was set for the example input file ucube.ine in
-the previous section, the program outputs the following ucube.icd file:
+the previous section, the program outputs the following ucube.ecd file:
 \begin{verbatim}
 *Incidences of output(=vertices/rays) and input (=hyperplanes)
 *   for each output, #incidence and the set of hyperplanes containing it
 *   or its complement with its cardinality with minus sign
-*cdd input file : ucube.ine  5  4
+*cdd input file : ucube.ine  (6 x 4)
 *cdd output file: ucube.ext
-*After <begin>, three numbers are output_size, m and m1,
-*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).
 begin
-  5  5  6
+  5  6  7
  3 :  1 4 5
  3 :  3 4 5
  3 :  2 3 5
- 3 :  1 2 5
+ -3 :  3 4 7
  -1 :  5
 end
 \end{verbatim}
-After ^^ ^^ begin", there are three numbers $5 \quad 5 \quad 6$.
+After ``begin'', there are three numbers $5 \quad 6 \quad 7$.
 The first number $5$ is a number of output (vertices and rays).
-The next number $5$ is $m$, the number of inequalities in the input file.
-The last number $6$ is usually $m+1$, and $m$ if the input linear inequality
+The next number $6$ is $m$, the number of inequalities in the input file.
+The last number $7$ is usually $m+1$, and $m$ if the input linear inequality
 system is homogeneous (i.e., has zero RHS) or the hull option is chosen.
 The number $m+1$ corresponds to the infinity constraint which is added
 for vertex/ray enumeration when the input system is not homogeneous.
@@ -401,20 +462,45 @@ those inequalities, and so the 1st, 4th and 5th inequalities are
 satisfied by equality at this vertex.   The last output
 $-1 \; : \; 5$ corresponds to the ray  $(0,0,1)$.  Since all inequalities
 except the last (5th) inequality are incident with this ray,
-the output is the complementary list with its cardinality (=1) with negative
-sign.  Note that the full list would be $5 \; : \; 1 \; 2 \; 3 \; 4 \; 6$, where
+the output is the  (shorter) complementary list with its cardinality (=1) with negative
+sign.  Note that the full list would be $6 \; : \; 1 \; 2 \; 3 \; 4 \; 6 \; 7$, where
 $6$ is the infinity plane.  One can ignore the infinity
 plane for some purposes,  but for analyzing the combinatorial 
 structure of polyhedra, it is
 very important information.
 
+Also, since the input\_incidence option was set for the example input file ucube.ine in
+the previous section, the program outputs the following ucube.icd file:
+\begin{verbatim}
+*cdd input file : ucube.ine (6 x 4)
+*cdd output file: ucube.ext
+*Incidence of input (=inequalities/facets) w.r.t. output (=vertices/rays).
+*row 7 is redundant;dominated by: 1 2 3 4 6
+*row 6 is redundant;dominated by: 1 2
+begin
+  6  5  5
+ -2 : 2 3
+ -2 : 1 2
+ -2 : 1 4
+ -2 : 3 4
+ -1 : 5
+ 2 : 4 5
+ 1 : 5
+end
+\end{verbatim}
+After ``begin'', there are three numbers $6 \quad 5 \quad 5$.
+The first number $6$ is a number of input (inequalities).
+The next number $5$ is $m$, the number of vertices and rays in the output file.
+The last number $5$ is always  $m$ for all *.icd files.  The remaining
+lines can be interpreted similarly with ucube.ecd file.
+
 The {\bf \#incidence} option can be used when you do not wish
 to output the incidence file but to output only the cardinality of incidence
 for each output, at the end of each output line.
 
-The incidence file (adjacency file, input\_adjacency as well) 
+The incidence files (adjacency file, input\_adjacency as well) 
 can be created independently
-after *.ext file is created, see ^^ ^^ postanalysis" option. 
+after *.ext file is created, see ``postanalysis'' option. 
  
 \item[nondegenerate] option\\
 When this option is set, the program assumes that the input system
@@ -428,11 +514,12 @@ The default is this option being off.
 \item[adjacency] option\\
 This option can be used when you want to output the adjacency of output.
 When the output is the list of vertices and rays, the program will
-output the adjacency list.  For the example input ^^ ^^ ucube.ine",
-the following extra file, say ^^ ^^ ucube.adj", will be created:
+output the adjacency list.  For the example input ``ucube.ine'',
+the following extra file  ``ucube.ead''  \footnote{In earlier versions,
+this was ``ucube.adj''}  will be created:
 \begin{verbatim}
 *Adjacency List of output (=vertices/rays)
-*cdd input file : ucube.ine (5 x 4)
+*cdd input file : ucube.ine (6 x 4)
 *cdd output file: ucube.ext
 begin
   5
@@ -447,7 +534,7 @@ The first number $5$ is simply the number of outputs of cdd, the
 number of vertices and rays in this case.
 The second line $ 1 \quad  3 \quad : 2 \quad  4 \quad  5$ says 
 that the first output of
-ucube.ext file has degree (valency) $3$, and its three neighbours are
+ucube.ext file has degree (valency) $3$, and its three neighbors are
 2nd, 4th and 5th output.
 
 When the computation is to obtain the hull (inequality system),
@@ -455,7 +542,7 @@ the adjacency is of course that of inequalities (i.e. facets).
 
 The adjacency file (incidence file, input\_adjacency file) 
 can be created independently
-after *.ext file is created, see ^^ ^^ postanalysis" option.
+after *.ext file is created, see ``postanalysis'' option.
 
 \item[input\_adjacency] option\\
 This option is for outputing the adjacency of input inequalities.
@@ -469,39 +556,42 @@ of the two facets is not contained in any other facet.
 
 The default file name for this output is *.iad.  This file
 lists the redundancy information of input also.  For the example
-^^ ^^ ucube.ine" above, the following ^^ ^^ ucube.iad" will
+``ucube.ine'' above, the following ``ucube.iad'' will
 be generated:
 \begin{verbatim}
 *Adjacency List of input (=inequalities/facets)
-*cdd input file : ucube.ine (5 x 4)
+*cdd input file : ucube.ine (6 x 4)
 *cdd output file: ucube.ext
-*row 6 is redundant;dominated by: 1 2 3 4
+*row 7 is redundant;dominated by: 1 2 3 4 6
+*row 6 is redundant;dominated by: 1 2
 begin
-  6
+  7
  1 3 : 2 4 5
  2 3 : 1 3 5
  3 3 : 2 4 5
  4 3 : 1 3 5
  5 4 : 1 2 3 4
  6 0 :
+ 7 0 :
 end
 \end{verbatim}
-Observe that the artificially added 6th inequality (infinity)
-is redundant because the first four facets intersects at
+Observe that the 6th inequality and the 
+artificially added 7th inequality (infinity)
+are found redundant.  The 7th inequality is redundant
+because the first four facets intersects at
 a single infinity point (corresponding to a unique extreme ray)
 and hence the polyhedron has no infinity facet,
 although the polyhedron is not bounded.
 
-
 The input\_adjacency file  can be created independently
-after *.ext file is created, see ^^ ^^ postanalysis" option.
+after *.ext file is created, see ``postanalysis'' option.
 
 \item[postanalysis] option\\
-It is often more desireble to compute the adjacency, 
-input\_adjacency and incidence relations
+It is often more desirable to compute the adjacency, 
+input\_adjacency, incidence and input\_incidence relations
 independently from the main (and often heavy) computation of enumerating all vertices
-and extreme rays.  The ^^ ^^ postanalysis" option can be used together
-with ^^ ^^ adjacency" and/or ^^ ^^ incidence" options for this purpose  
+and extreme rays.  The ``postanalysis'' option can be used together
+with ``adjacency'' and/or ``incidence'' options for this purpose  
 to create *.adj and/or *.icd files from both *.ine and *.ext files.
 If *.ine file contains this option, cdd+ will open the
 corresponding *.ext file and output requested *.adj, *.iad and/or *.icd files.
@@ -561,7 +651,7 @@ ordering will be chosen.
 When maximize option is set with an objective vector 
 $c_0\: c_1 \: c_2 \ldots c_d$, the program
 simply solves the linear program: $\max c_0 + c_1 x_1 + c_2 x_2 +\cdots + c_d x_d$
-over the input polyhedron $P$. The grammer is simply
+over the input polyhedron $P$. The grammar is simply
 
 \begin{tabular}{ccl}
 \\ \hline
@@ -577,26 +667,27 @@ over the input polyhedron $P$. The grammer is simply
 
 The minimize option works exactly same way for minimization of
 a linear objective function.
-See the sample input file ^^ ^^ lptest.ine".  The program cdd
+See the sample input file ``lptest.ine''.  The program cdd
 will output both primal and dual optimal solutions  if the LP
 is solvable.  If the LP is infeasible (dual infeasible), then
 it will output an evidence.
 
-For the moment, the LP solver is primitive:
-one can use either the dual simplex
-method (option ^^ ^^ dual-simplex", default) 
+For the moment,  one can use either the dual simplex
+method (option ``dual-simplex'', default) 
 or the criss-cross method by Terlaky-Wang.  
 The latter method can be specified
-by option ^^ ^^ criss-cross" and is very sensible to the ordering
+by option ``criss-cross'' and is very sensible to the ordering
 of inequalities.  The ordering options such as maxindex, lexmin and 
 random will affect the behavior of this solver.  Try to use
 a different ordering, if the computation takes too much time.
 
-
 Also, in order to see the intermediate LP sign tableau 
-one can use ^^ ^^ show\_tableau" option.  Also use ^^ ^^ manual\_pivot"
+one can use ``show\_tableau'' option.  Also use ``manual\_pivot''
 option to select pivots manually.   Of course, these options are 
 intended for very small problems.
+
+The minimize and maximize options should be used only in H-representation
+(*.ine) files, and the output filename is ``*.lps''.
 
 \item[find\_interior] option\\
 When this option is set, the program solves the linear program: 
@@ -609,10 +700,40 @@ then the polyhedron admits unbounded inscribed balls.  To find any
 interior point in this last case, one must add some inequality(ies)
 to bound the polyhedron. 
 
-\item[facet\_listing] option\\
-When this option is set, the program checks for each i-th row of the input 
+This option should be used only in H-representation
+(*.ine) files, and the output filename is ``*.lps''.
+
+\item[facet\_listing, vertex\_listing] options\\
+When the option ``facet\_listing''  is set, the program checks for each i-th row of the input 
 whether the associated inequality $A_i x \le b_i$ determines a facet
-of the polyhedron.  
+of the polyhedron.    This option should be used only in H-representation
+(*.ine) files, and the output filename is ``*.fis''.
+
+When the option ``vertex\_listing''  is set, the program checks for each i-th row of the input 
+whether the associated point  $v_i$ determines a facet
+of the polyhedron.    This option should be used only in V-representation
+(*.ext) files, and the output filename is ``*.vis''.
+
+After *.vis or *.fis file (say test.vis) is obtained,  
+one can get the minimal nonredundant
+system by using the included gawk script  get\_essential:
+\begin{verbatim}
+% get_essential <  test.vis >test\_ess.ine
+\end{verbatim}
+You must have a gnu gawk command accessible at
+the current unix directory.  One must edit the new file
+test\_ess.ine slightly according to the instruction
+written in the file.
+
+\item[facet\_listing\_external, vertex\_listing\_external] options\\
+These options can be used to apply facet\_listing and vertex\_listing
+with a (possibly large) external file.   When  the option facet\_listing\_external 
+is set  with *.ine file, cdd+ will open an external file *.ine.external (in H-format)
+and verify for each inequality of the external file whether it changes the 
+original polyhedron  (represented by *.ine) if it is added.  The option
+vertex\_listing\_external can be set in *.ext file and works similarly.
+Since cdd+ reads each line of the external file one by one, the file
+can be very large, say of few hundred thousands lines. 
 
 \item[tope\_listing] option\\
 When this option is set, the program generates all full-dimensional
@@ -624,7 +745,9 @@ a sign vector in $\{+, -\} ^m$ whose $i$-component
 indicates the (positive or negative) side of the hyperplane $h_i$
 the tope is located.  This procedure assumes that the input
 polyhedron is full-dimensional and thus the vector of all $+$'s
-determines a tope. 
+determines a tope.   This option should be used only in H-representation
+(*.ine) files, and the output filename is ``*.tis''.
+
 
 \item[partial\_enumeration, equality, strict\_inequality] options\\
 With partial\_enumeration option (or equivalently equality option), 
@@ -649,7 +772,7 @@ the option should be specified as
 \end{tabular}
 
 The {\bf strict\_inequality\/}  option follows the same 
-grammer as partial\_enumeration or equality.  
+grammar as partial\_enumeration or equality.  
 With this, cdd outputs only those vertices and rays not satisfying
 any of the specified inequalities with equality.  See the sample files, 
 partialtest1.ine and partialtest2.ine. 
@@ -658,7 +781,7 @@ These options make no effect on LP maximization or minimization.
 
 \item[preprojection] option\\
 This option is for a preprocessing
-of orthogonal projection of the polyhedon to the subspace of
+of orthogonal projection of the polyhedron to the subspace of
 $R^d$ spanned by a subset of variables.  
 That is, if the inequality inequality system is 
 of two-block form  $A_1 x_1 + A_2 x_2 \le b$, 
@@ -683,7 +806,7 @@ Consequently, the inequality system
 $\{ \quad r^T A_1  x_1  \le  r^T b : \quad r \in  R \}$
 represents the projection of the original polyhedron onto
 $x_1$-space with possible redundancy.  The default file names
-for the inequality system output and the extemal ray output are
+for the inequality system output and the extremal ray output are
 *sub.ine and *.ext, respectively if the input file is named *.ine.  
 
 There is a supplementary  C program, called domcheck, 
@@ -707,22 +830,46 @@ or, if you want to compute with rational (exact arithmetic)
   % cddr+ test.ine
 \end{verbatim}
 Then the program will open necessary output files with
-default file names, and output the requested results.
-The default names are {\em test.ext\/}, {\em test.solved\/}, {\em test.icd\/},
- {\em test.adj\/}, {\em test.iad\/},
-{\em testsub.ine\/} for the extreme points/ray file, 
-the input verification file, the incidence
-file, the adjacency file, the input\_adjacency 
-and the preprojection variable sub-inequality
-system, respectively.  If you want to specify the output file names
+default file names as shown in Table~\ref{FIG:files} 
+and output the requested results.
+
+\begin{table}[ht] 
+\begin{center}
+\begin{tabular}{|l||l|l|}   \hline
+                       &  \multicolumn{2}{c|} {Input File Format }\\
+options         &   \multicolumn{1}{c|}  {H-format (*.ine)} & \multicolumn{1}{c|}  {V-format (*.ext)} \\ \hline
+conversion             &  *.ext   & *.ine  \\
+incidence                &  *.ecd  &  *.icd \\
+input\_incidence   &  *.iad  &  *.ead \\
+adjacency   &  *.ead  &  *.iad \\
+input\_adjacency   &  *.iad  &  *.ead \\
+maximize/minimize   &  *.lps  &  non applicable \\
+facet\_listing   &  *.fis  &  non applicable \\
+vertex\_listing   &  non applicable  & *.vis \\
+tope\_listing   &  *.tis  &  non applicable \\
+verify\_input    & *.solved &   *.solved \\
+preprojection  &  *sub.ine  &  non applicable \\
+                          &  and *.ext  &                              \\ \hline
+\end{tabular}
+\end{center}
+\caption{Default  extensions for output files} 
+\label{FIG:files}
+\end{table}
+
+
+\bigskip  \noindent
+If you want to specify the output file names
 different from default, simply run the program by
 \begin{verbatim}
-  % cdd
+  % cddf+   (or cddr+)
 \end{verbatim}
 and input desired file names at each of file name requests.
 Even after you run cdd this way, one can 
 change to the automatic mode by inputing the input file 
-name with additional semicolon, e.g. ^^ ^^ test.ine;".
+name with additional semicolon, e.g. ``test.ine;''.
+
+To test cdd+, it is suggested to run cdd+ with sample input files
+which are stored in subdirectories {\bf ine} and {\bf ext}.
 
 \section{Source Files and Compilation}  \label{CAUTIONS}
 
@@ -742,10 +889,13 @@ name with additional semicolon, e.g. ^^ ^^ test.ine;".
      cddrevs.h   & The header file for cddrevs.C\\
      setoper.C   & C++ library for set operation\\
      setoper.h   & The header file for setoper.C \\
-     cddman.tex  & Latex source file of cdd+ Reference Manual\\
+     cddman.tex  & Latex 2$\epsilon$ source file of cdd+ Reference Manual\\
+     cddman.bbl  & bibliography file of cdd+ Reference Manual\\
      cddHISTORY  & brief description of changes made at each updates\\
-     ine         & A subdirectory containing sample input files\\
-     ext         & A subdirectory containing sample output files\\
+     ine         & A subdirectory containing sample inequality input  files\\
+     ext         & A subdirectory containing sample point/ray input files\\
+     Makefile  & makefile for cddf+ and cddr+\\
+     get\_essential  & gawk script for facet\_listing and vertex\_listing \\
      COPYING     & GNU GENERAL PUBLIC LICENSE\\
 \end{tabular}
 
@@ -760,7 +910,7 @@ please edit Makefile according to the setup of a GNU gcc compiler and g++-librar
 which creates two executables, cddr+ and cddf+.  The executable
 cddr+ computes with rational (exact arithmetic) and cddf+ computes
 with floating-point arithmetic.  If you want to create only one of
-them, use "make cddf+" or "make cddr+".  Once these executables are 
+them, use ''make cddf+'' or ''make cddr+''.  Once these executables are 
 created one might want to remove all object files *.o by
 \begin{verbatim}
    % rm *.o
@@ -774,7 +924,9 @@ Generally, cdd+ seems to be most stable when compiled with gcc-2.6.3
 and libg++-2.6.2. 
 
 Note that cddr+ reads Polyhedra data in integer or rational
-number type, while cddf+ reads data in integer or real number type.
+number type, while cddf+ reads data in integer, rational and real number type.
+When cddf+ reads integer or rational numbers, it first converts them
+to floating point numbers and computes with floating-point arithmetic.
 
 \item[(2)] [Recompilation] The first two constants in the program cdddef.h are to be 
 changed by the user if necessary, and the program must be recompiled
@@ -855,7 +1007,8 @@ library of g++. In future, this problem will be hopefully eliminated.
 \end{itemize}
 
 \section{FTP site}  \label{FTP}
-An anonymous ftp site for the programs is set at:
+An anonymous \htmladdnormallink{ftp}
+{ftp://ifor13.ethz.ch/pub/fukuda/cdd/} site for the programs is set at:
 \begin{verbatim}
    ftpsite:  ifor13.ethz.ch (129.132.154.13)
    directory: pub/fukuda/cdd
@@ -866,24 +1019,27 @@ file transfer.
 
 \section{Other Userful Codes}  \label{CODES}
 There are several other useful codes available for vertex enumeration and/or
-convex hull computation  such as rs, qhull, porta and irisa-polylib.
+convex hull computation  such as lrs, qhull, porta and irisa-polylib.
 The pointers to these codes are available at
-\begin{verbatim}
- 1. Geometry Center Software List:
-    http://www.geom.umn.edu/software/cglist/
-    (look for "arbitrary dimensional convex hull"),
-  2. Linear Programming FAQ:
-    http://www.skypoint.com/subscribers/ashbury/linear-programming-faq.html
-    (look for "convex hull"),
-  3. ZIB Berlin:
-    ftp:  elib.zib-berlin.de (130.73.108.11)  
-    directory:  pub/mathprog/polyth.
-\end{verbatim}
+\begin{enumerate}
+ \item  Avis'  lexicographic reverse search code lrs:\\
+\htmladdnormallink{ftp://mutt.cs.mcgill.ca/pub/C/}
+ {ftp://mutt.cs.mcgill.ca/pub/C/}.
+ \item Geometry Center Software List by Nina Amenta:\\
+\htmladdnormallink{http://www.geom.umn.edu/software/cglist/}
+{http://www.geom.umn.edu/software/cglist/}\\
+   (look for ''arbitrary dimensional convex hull''),
+ \item Linear Programming FAQ by John Gregory:\\
+\htmladdnormallink{http://www.skypoint.com/subscribers/ashbury/linear-programming-faq.html}
+{http://www.skypoint.com/subscribers/ashbury/linear-programming-faq.html}\\
+ (look for ''convex hull''),
+ \item ZIB Berlin polyhedral software list:\\
+ \htmladdnormallink{ftp://elib.zib-berlin.de/pub/mathprog/polyth/index.html}
+{ftp://elib.zib-berlin.de/pub/mathprog/polyth/index.html}.
+\end{enumerate}
 
 
-\bigskip
-\noindent
-{\large {\bf Acknowledgements.}} 
+\section*{Acknowledgements.} 
 I am  grateful to Prof. Th. M. Liebling (EPFL, Switzerland)  who
 provided me with an ideal opportunity to visit the department
 for the academic year 1993-1994.  Without his 
@@ -893,37 +1049,19 @@ There are many people who helped me to improve cdd,  in particular,
 I am indebted to Dr. Alain Prodon (EPFL) , Dr. Francois Margot
 (UBC, Canada) , Dr. Henry Crapo (INRIA, France),
 Dr. Alexander Bockmayr (Max Planck Institute, Germany), 
-Mr. David Bremner (McGill University, Canada)  and
-Mr. George Frankhauser (ETH Zurich). 
+Mr. David Bremner (McGill University, Canada),
+Dr. George Fankhauser (ETH Zurich) and
+Dr.  Matthew Saltzman (Clemson University, U.S.A.). 
 
 Finally, but not least, I would like to thank Prof. H.-J. L\"uthi
 (ETH Zurich) who has made the current new development (cdd+)
 possible.  Some important new features, including the exact computation
 and the tope listing, have been added to cdd with his support.
 
-\addtolength{\baselineskip}{-0.5\baselineskip}
-\begin{thebibliography}{99}
-\bibitem[AF92]{AF} Avis, D.  and Fukuda, K., ^^ ^^ A pivoting algorithm
-        for convex hulls and vertex enumeration of arrangements
-        and polyhedra," {\em Discrete Comput Geometry} 8
-        (1992), pp. 295-313.
+\bibliographystyle{alpha}
 
-\bibitem[CGAF93]{CGAF} Ceder, G., Garbulski, G.D.,  Avis, D. and Fukuda, K., 
-^^ ^^ Ground states of a ternary lattice model with nearest
-and next-nearest neighbor interactions,"
-{\em Physical Review B\/}, Vol.49, No. 1, (1994)  pp. 1-7.
-
-\bibitem[G90]{G} Grishukhin, V.P., ^^ ^^ All facets of
-the cut cone for n=7 are known," European Journal of
-Combinatorics 11 (1990), 115-117.
-
-\bibitem[MRTT53]{MRTT} Motzkin, T.S. , Raiffa, H.,  
-Thompson, G.L. and  Thrall, R.M., ``The double description method," 
-in  ^^ ^^ Contribution to the Theory of Games, Vol. II"
-(H.W. Kuhn and A.W. Tucker, eds.),
-Annals of Math. Studies 28,  Princeton University Press, 1953, pp.81-103.
-
-\end{thebibliography}
-
+\bibliography{fukuda1,fukuda2}
 
 \end{document}
+
+

@@ -1,6 +1,6 @@
 /* cdd.h: Header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995 
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -10,8 +10,8 @@
    the manual cddman.tex for detail.
 */
 
-#define COPYRIGHT   "Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch"
-#define DDVERSION   "Version 0.73 (September 6, 1995)"
+#define COPYRIGHT   "Copyright (C) 1996, Komei Fukuda, fukuda@ifor.math.ethz.ch"
+#define DDVERSION   "Version 0.74 (June 17, 1996)"
 
 #ifdef RATIONAL
 #define ARITHMETIC  "Compiled for Rational Exact Arithmetic"
@@ -26,7 +26,7 @@ typedef Rational myTYPE;
 #else
 typedef double myTYPE;
 #endif  RATIONAL
-
+typedef Rational myRational;
 typedef int boolean;
 typedef long rowrange;
 typedef long colrange;
@@ -79,15 +79,20 @@ typedef enum {
 
 typedef enum {
   IneToExt, ExtToIne, Projection, 
-  LPmax, LPmin, FacetListing, TopeListing, InteriorFind
+  LPmax, LPmin, FacetListing, VertexListing, TopeListing, InteriorFind,
+  FacetListingExternal,VertexListingExternal
 } ConversionType;
+
+typedef enum {
+  RowDecomposition, RowSubproblemSolve, Nothing
+} SpecialConversionType;
 
 typedef enum {
   CrissCross,DualSimplex,CombMaxImprove
 } LPsolverType;
 
 typedef enum {
-  IncOff=0, IncCardinality, IncSet
+  IncOff=0, IncCardinality, InputIncidence, OutputIncidence, IOIncidence
 } IncidenceOutputType;
 
 typedef enum {
@@ -117,7 +122,7 @@ extern long mm, nn;   /*size of the homogenous system to be solved by dd*/
 extern long projdim;  /*dimension of orthogonal preprojection */
 extern colset projvars;   /*set of variables spanning the space of preprojection, 
      i.e. the remaining variables are to be removed*/
-extern rowset EqualitySet, NonequalitySet, GroundSet, Face, Face1;
+extern rowset EqualitySet, NonequalitySet, GroundSet, Face, Face1,SubproblemRowSet, RedundantRowSet;
 extern rowrange Iteration, hh;
 extern rowindex OrderVector;
 extern rowindex EqualityIndex;  
@@ -143,24 +148,24 @@ extern boolean RecomputeRowOrder, inputsuccessful;
 extern HyperplaneOrderType HyperplaneOrder;
 extern AdjacencyTestType AdjacencyTest;
 extern NumberType Number;
-extern char *InputNumberString, *OutputNumberString;
+extern string InputNumberString, OutputNumberString;
 extern InequalityType Inequality;
 extern boolean NondegAssumed;   /* Nondegeneacy preknowledge flag */
 extern boolean InitBasisAtBottom;  /* if it is on, the initial Basis will be selected at bottom */
 extern boolean RestrictedEnumeration; /* Restricted enumeration Switch (True if it is restricted on the intersection of EqualitySet hyperplanes) */
 extern boolean RelaxedEnumeration; /* Relaxed enumeration Switch (True if NonequalitySet inequalities must be satisfied with strict inequality) */
-extern boolean RowDecomposition; /* Row decomposition enumeration Switch */
 extern boolean VerifyInput; /* Verification switch for the input data */
 extern boolean PreOrderedRun; 
 extern CompStatusType CompStatus;     /* Computation Status */
 extern ConversionType Conversion;
+extern SpecialConversionType SpecialConversion;  /* rowdecomposition, rowsubproblem */
 extern LPsolverType LPsolver;
 extern IncidenceOutputType IncidenceOutput;
 extern AdjacencyOutputType AdjacencyOutput;
 extern ErrorType Error;
 extern FileInputModeType FileInputMode;
 extern DataFileType inputfile,ifilehead,ifiletail,
-     outputfile,projfile, icdfile,adjfile,iadfile,logfile,dexfile,verfile;
+     outputfile,projfile,incfile,adjfile,logfile,dexfile,verfile,xtnfile;
 extern time_t starttime, endtime;
 extern unsigned int rseed;
 
@@ -168,6 +173,7 @@ extern myTYPE zero;    /*Rational or floating zero*/
 
 void SetInputFile(boolean *);
 void SetWriteFileName(DataFileType, char, char *);
+void SetReadFileName(DataFileType, char, char *);
 
 myTYPE FABS(myTYPE);
 void SetNumberType(string);
@@ -215,6 +221,7 @@ void DualizeAA(Bmatrix T);
 void EnlargeAAforInteriorFinding(void);
 void EnlargeAAforZeroRHSLP(void);
 void RecoverAAafterInteriorFinding(void);
+void ShiftPointsAroundOrigin(ostream &, ostream &, Arow);
 boolean RowEquivalent_Q(Arow a1, Arow a2, colrange n);
 void FindRowEquivalenceClasses(long *classno, rowindex);
 void WriteSubMatrixOfAA(ostream &, rowset, colset, InequalityType);
@@ -227,16 +234,24 @@ void FindBasis(Amatrix, HyperplaneOrderType, rowset, long *,
 void SelectCrissCrossPivot(Amatrix, Bmatrix, rowindex,
   long, rowrange,colrange,rowrange *,colrange *,
   boolean *, LPStatusType *);
-void SelectDualSimplexPivot(Amatrix, Bmatrix, rowindex,
+void SelectDualSimplexPivot(boolean, Amatrix, Bmatrix, rowindex,
     colindex, long, rowrange, colrange,
     rowrange *, colrange *, boolean *, LPStatusType *);
-void CrissCrossMinimize(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
-  rowrange, colrange, 
-  LPStatusType *, myTYPE *optvalue, Arow, Arow, colindex,
+void CrissCrossMinimize(ostream &, ostream &, Amatrix,Bmatrix,
+  rowrange, colrange, boolean,
+  LPStatusType *, myTYPE *, Arow, Arow, colindex,
   rowrange *, colrange *, long *);
-void CrissCrossMaximize(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
-  rowrange, colrange, 
-  LPStatusType *, myTYPE *optvalue, Arow, Arow, colindex,
+void CrissCrossMaximize(ostream &, ostream &, Amatrix,Bmatrix,
+  rowrange, colrange, boolean, 
+  LPStatusType *, myTYPE *, Arow, Arow, colindex,
+  rowrange *, colrange *, long *);
+void DualSimplexMinimize(ostream &, ostream &, Amatrix,Bmatrix,
+  rowrange, colrange, boolean,
+  LPStatusType *, myTYPE *, Arow, Arow, colindex,
+  rowrange *, colrange *, long *);
+void DualSimplexMaximize(ostream &, ostream &, Amatrix,Bmatrix,
+  rowrange, colrange, boolean,
+  LPStatusType *, myTYPE *, Arow, Arow, colindex,
   rowrange *, colrange *, long *);
 void ManualPivot(ostream &, ostream &, Amatrix,Bmatrix BasisInverse,
   rowrange, colrange, 
@@ -276,6 +291,7 @@ void WriteRayRecord(ostream &, RayRecord *);
 void WriteRayRecord2(ostream &, RayRecord *);
 void WriteExtFile(ostream &, ostream &);
 void WriteIncidenceFile(ostream &);
+void WriteInputIncidenceFile(ostream &);
 void WriteInputAdjacencyFile(ostream &);
 void WriteAdjacencyFile(ostream &);
 void WriteProjResult(ostream &, ostream &, long *);
@@ -285,15 +301,20 @@ void WriteDecompResult(ostream &f, ostream &f_log);
 void WriteRowEquivalence(ostream &f, long classno, rowindex rowequiv);
 void OutputHeading(void);
 void InitialDataSetup(void);
+void LPInit(void);
 void DDInit(void);
 void LPMain(ostream &, ostream &);
 void PostAnalysisMain(ifstream &, ostream &);
 void InteriorFindMain(ostream &, ostream &, boolean *);
+void WriteCurrentSolution(ostream &, Amatrix, Bmatrix, rowrange, colrange, colindex);
+void CheckConversionConsistency(ostream &, ostream &);
 
 // procedures in cddrevs.C
 boolean Facet_Q(topeOBJECT, rowrange);
+boolean Facet_Q2(topeOBJECT, rowrange,colindex,Arow);
 void ReverseSearch(ostream &, topeOBJECT, long delta);
-void FacetListMain(ostream &, ostream &);
+void FacetandVertexListMain(ostream &, ostream &);
+void FacetandVertexExternalListMain(ostream &, ostream &);
 void TopeListMain(ostream &, ostream &);
 
 /* end of cdd.h */

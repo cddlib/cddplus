@@ -2,6 +2,7 @@
 
 # You must use GNU g++ compiler of version 2.6.0 or higher
 CC = /usr/local/bin/gcc
+#CC = /bin/cc
 
 # Location of g++-library archive file libg++.a
 #LIBDIR = /usr/lib
@@ -13,6 +14,7 @@ INCLUDEDIR = /usr/local/lib/g++-include
 
 # Compiler options
 #CFLAGS = -g -O -I$(INCLUDEDIR)
+#CFLAGS = -g -pg -O -I$(INCLUDEDIR)
 CFLAGS = -O -I$(INCLUDEDIR)
 
 ########## You shouldn't have to change anything after this point ##########

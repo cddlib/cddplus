@@ -1,6 +1,6 @@
 /* cddrevs.C:  Reverse Search Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -168,73 +168,119 @@ void ReverseSearch(ostream &wf, topeOBJECT s, long delta)
   wf << "\nNumber ***** of topes = " << count << "\n";
 }
 
-// Facet recognition programs using LPmax (Criss-Cross) code
+// Facet recognition programs using Linear Programming
 
 boolean Facet_Q(topeOBJECT tope, rowrange ii)
 {
-  colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
-  static Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static colindex nbindex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
+  static Arow LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static colrange nlast=0;
+
+  if (nlast!=nn){
+    if (nlast>0){
+      delete[] LPdsol;
+    }
+    LPdsol = new myTYPE[nn];
+    nlast=nn; 
+  }
+  return Facet_Q2(tope,ii,nbindex,LPdsol);
+}
+
+boolean Facet_Q2(topeOBJECT tope, rowrange ii, colindex NBIndex, Arow LPdsol)
+{
+  /* Before calling this, LPdsol must be initialized with LPdsol = new myTYPE[nn].
+     When ii is detected to be non-facet,
+     NBIndex returns the nonbasic variables at the evidence solution.
+     LPdsol returns the evidence dual solution.
+  */
+  static Arow LPsol;  /*  LP solution and the dual solution (basic var only) */
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
-  myTYPE ov=0, tempRHS=0;  /* LP optimum value */
+  colrange s=0;
+  myTYPE ov=0, tempRHS=0, purezero=0, pureone=1;  /* ov = LP optimum value */
   long LPiter,testi, i, j;
-  boolean answer=True;
+  boolean answer=True,localdebug=False;
   static colrange nlast=0;
   static Bmatrix BInv;
+  static firstcall=True, UsePrevBasis;
+  static ConversionType ConversionSave;
 
   if (nlast!=nn){
     if (nlast>0){
       delete[] LPsol; 
-      delete[] LPdsol;
       free_Bmatrix(BInv);
     }
     InitializeBmatrix(BInv);
     LPsol = new myTYPE[nn];
-    LPdsol = new myTYPE[nn];
-    nlast=nn; 
+    nlast=nn;
+    firstcall=True;
   }
+  if (firstcall || Conversion==TopeListing) 
+    UsePrevBasis=False; else UsePrevBasis=True;
+  ConversionSave=Conversion;
   Conversion=LPmax;
   RHScol=1;
   mm=mm+1;
   OBJrow=mm;
   AA[OBJrow-1]=new myTYPE[nn];
-  if (debug) cout << "Facet_Q:  create an exra row " << OBJrow << "\n";
+  if (localdebug) cout << "Facet_Q:  create an exra row " << OBJrow << "\n";
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {
       if (debug) cout << "reversing the signs of " << i << "th inequality\n";
-      for (j=1; j<=nn; j++) AA[i-1][j-1]=-AA[i-1][j-1];
+      for (s=0,j=1; j<=nn; j++){
+        AA[i-1][j-1]=-AA[i-1][j-1];
+      }
     }
   } 
   tempRHS=AA[ii-1][0];
-  for (j=1; j<=nn; j++) AA[OBJrow-1][j-1]=-AA[ii-1][j-1]; 
-  AA[OBJrow-1][0]=0;
-  AA[ii-1][0]=tempRHS+1;   /* relax the ii-th inequality by +1 */
-  CrissCrossMaximize(cout, cout, AA, BInv, OBJrow, RHScol, 
+  for (s=0,j=1; j<=nn; j++){
+    AA[OBJrow-1][j-1]=-AA[ii-1][j-1];
+    if (!firstcall && NBIndex[j]==ii){
+      s=j;
+      if (localdebug) cout << "Row "<< ii << " is nonbasic" << s << "\n";
+    }
+  }
+  AA[OBJrow-1][0]=purezero;
+  AA[ii-1][0]=tempRHS+pureone;   /* relax the ii-th inequality by a large number*/
+  if (s>0) GausianColumnPivot2(AA,BInv, ii, s);
+  DualSimplexMaximize(cout, cout, AA, BInv, OBJrow, RHScol, UsePrevBasis,
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
-  if (debug) cout << ii << "-th LP solved with objective value =" << ov << 
+  if (localdebug) cout << ii << "-th LP solved with objective value =" << ov << 
     " RHS value = " << tempRHS << "  iter= " << LPiter << "\n";
-  if (ov > tempRHS) 
+  if ((ov - tempRHS) > zero) 
   {
     answer=True;
-    if (debug) cout << ii << "-th inequality determines a facet.\n";
+    if (localdebug) cout << ii << "-th inequality determines a facet.\n";
   }
   else {
     answer=False;
-    if (debug) cout << ii << "-th inequality does not determine a facet.\n";
+    if (localdebug) cout << ii << "-th inequality does not determine a facet.\n";
   }
   AA[ii-1][0]=tempRHS;   /* restore the original RHS */
+  for (s=0,j=1; j<=nn; j++){
+    if (NBIndex[j]==ii){
+      s=j;
+    }
+  }
+  if (s>0){
+    if (localdebug) cout << "Row "<< ii << " is nonbasic: basisinv updated " << s << "\n";
+    GausianColumnPivot2(AA,BInv, ii, s);
+  }
   delete[] AA[OBJrow-1];
-  if (debug) cout << "Facet_Q:  delete the exra row " << OBJrow << "\n";
+  if (localdebug) cout << "Facet_Q:  delete the exra row " << OBJrow << "\n";
   mm=mm-1;
   for (i=1; i<=mm; i++) {
     if (tope[i]<0) {
       for (j=1; j<=nn; j++)  AA[i-1][j-1]=-AA[i-1][j-1]; /* restore the original data */
     }
   }
+  firstcall=False;
+  Conversion=ConversionSave;
   return answer;
 }
 
-void FacetListMain(ostream &f, ostream &f_log)
+
+void FacetandVertexListMain(ostream &f, ostream &f_log)
 { 
   rowrange i;
   colrange j;
@@ -243,49 +289,225 @@ void FacetListMain(ostream &f, ostream &f_log)
   rowindex rowequiv;
   rowrange classno;
   topeOBJECT Tope(mm);
+  Arow LPdsol,center;
+  static colindex NBIndex;
 
+  LPdsol = new myTYPE[nn];
+  center = new myTYPE[nn];
   WriteProgramDescription(f);
   (f) << "*Input File:" << inputfile << "(" << minput << "x" << ninput << ")\n";
   WriteRunningMode(f); WriteRunningMode(f_log);
-  rowequiv = new long[mm+1];
-  FindRowEquivalenceClasses(&classno, rowequiv);
-  if (classno<mm) {
-    cout << "*There are multiple equivalent rows!!!\n";
-    cout << "*You have to remove redundancies before listing facets. \n";
-    (f) << "*There are multiple equivalent rows!!!\n";
-    (f) << "*You have to remove redundancies before listing facets. \n";
-    WriteRowEquivalence(cout, classno, rowequiv);
-    WriteRowEquivalence(f, classno, rowequiv);
-    goto _L99;
+  if (Conversion==VertexListing){
+    ShiftPointsAroundOrigin(f,f_log, center); 
+    /* Shifting the points so that the origin will be in the relative interior of
+       their convex hull
+    */
   }
+  (f) << "* `e` means essential and `r` means redundant.\n";
+  if (DynamicWriteOn) cout << "* `e` means essential and `r` means redundant.\n";
+  rowequiv = new long[mm+1];
+//  FindRowEquivalenceClasses(&classno, rowequiv);
+//  if (classno<mm) {
+//    cout << "*There are multiple equivalent rows!!!\n";
+//    cout << "*You have to remove duplicates before listing facets. \n";
+//    (f) << "*There are multiple equivalent rows!!!\n";
+//    (f) << "*You have to remove duplicates before listing facets. \n";
+//    WriteRowEquivalence(cout, classno, rowequiv);
+//    WriteRowEquivalence(f, classno, rowequiv);
+//    goto _L99;
+//  }
 
   time(&starttime); 
   set_initialize(&subrows,mm);
   set_initialize(&allcols,nn); 
   for (j=1;j<=nn;j++) set_addelem(allcols,j);
   if (Inequality==ZeroRHS){
-    printf("Sorry, facet listing is not implemented for RHS==0.\n");
+    printf("Sorry, facet/vertex listing is not implemented for RHS==0.\n");
     goto _L99;
   }
+  (f) << "begin\n";
+  if (DynamicWriteOn) (cout) <<"begin\n";
   for (i=1; i<=mm; i++){
-    if (Facet_Q(Tope, i)) {
-      if (DynamicWriteOn) cout << "row "<< i << " determines a facet.\n";
-      (f) << "row " << i << " determines a facet.\n";
+    if (Facet_Q2(Tope, i, NBIndex, LPdsol)) {
+      if (DynamicWriteOn) cout << i << " e:";
+      (f) << i << " e:";
       set_addelem(subrows,i);
     }
     else {
-      if (DynamicWriteOn) cout << "row " << i << " does not determine a facet.\n";
-      (f) << "row " << i << " does not determine a facet.\n";
+      (f) <<  i << " r:";
+      if (DynamicWriteOn) (cout) << i << " r:";
+    }
+    for (j=1; j<nn; j++){
+      (f) << " " << NBIndex[j+1];
+      if (LogWriteOn){
+        (f) <<"(";  WriteNumber(f,LPdsol[j]); (f) << ")";
+      }
+    }
+    (f) << "\n";
+    if (DynamicWriteOn){
+      for (j=1; j<nn; j++){
+        (cout) << " " << NBIndex[j+1];
+        if (LogWriteOn){
+          (cout) <<"(";  WriteNumber(cout,LPdsol[j]); (cout) << ")";
+        }
+      }
+      (cout) << "\n";
     }
   }
+  (f) << "end\n";
+  if (DynamicWriteOn) (cout) <<"end\n";
   time(&endtime);
-  (f) << "* Here is a minimal system representing the same polyhedral set as the input.\n";
-  WriteSubMatrixOfAA(f,subrows,allcols,Inequality);
+//  (f) << "* Here is a minimal system representing the same polyhedral set as the input.\n";
+//  WriteSubMatrixOfAA(f,subrows,allcols,Inequality);
   WriteTimes(f); WriteTimes(f_log); WriteTimes(cout);
-  set_free(&subrows);
-  set_free(&allcols); 
+//  set_free(&subrows);
+//  set_free(&allcols); 
 _L99:;
-  delete[] rowequiv;
+//  delete[] rowequiv;
+//  delete[] LPdsol;
+//  delete[] center;
+}
+
+void FacetandVertexExternalListMain(ostream &f, ostream &f_log)
+{ 
+  rowrange i,mmxtn;
+  colrange j,nnxtn;
+  rowset subrows; /* rows which define a facet inequality */
+  colset allcols;  /* allcols: all column indices */
+  rowindex rowequiv;
+  rowrange classno;
+  topeOBJECT Tope(mm);
+  Arow LPdsol,center;
+  static colindex NBIndex;
+  string xtnnumbertype,command;
+  myRational rvalue=0;
+  myTYPE value=0;
+  boolean found,localdebug=False;
+  char ch;
+
+  SetReadFileName(xtnfile,'x',"external");
+  ifstream reading_xtn(xtnfile);
+
+  if (reading_xtn.is_open()) {
+    found=False;
+    while (!found)
+    {
+      if (!reading_xtn.eof()) {
+        reading_xtn >> command;
+  	if (command=="begin") {
+          found=True;
+  	}
+      }
+      else {
+  	Error=ImproperInputFormat;
+  	goto _L99;
+      }
+    }
+    reading_xtn >> mmxtn;
+    reading_xtn >> nnxtn;
+    reading_xtn >> xtnnumbertype;
+
+    LPdsol = new myTYPE[nn];
+    center = new myTYPE[nn];
+    WriteProgramDescription(f);
+    (f) << "*Essential File:" << inputfile << "(" << minput << "x" << ninput << ")\n";
+    (f) << "*Input File:" << xtnfile << "(" << mmxtn << "x" << nnxtn << ")\n";
+    WriteRunningMode(f); WriteRunningMode(f_log);
+    if (Conversion==VertexListingExternal){
+      ShiftPointsAroundOrigin(f,f_log, center); 
+      /* Shifting the points so that the origin will be in the relative interior of
+         their convex hull
+      */
+    }
+    (f) << "* `e` means essential and `r` means redundant.\n";
+
+    /* Extrarow to store each line from the external file */
+    mm = minput + 1;
+    AA[mm-1]= new myTYPE[ninput];
+
+ 
+    time(&starttime); 
+    set_initialize(&subrows,mm);
+    set_initialize(&allcols,nn); 
+    for (j=1;j<=nn;j++) set_addelem(allcols,j);
+    if (Inequality==ZeroRHS){
+      printf("Sorry, facet/vertex listing is not implemented for RHS==0.\n");
+      goto _L99;
+    }
+    (f) << "begin\n";
+    if (DynamicWriteOn) (cout) <<"begin\n";
+    for (i=1; i<=mmxtn; i++){
+      for (j = 1; j <= nn; j++) {
+        if (xtnnumbertype=="rational" && OutputNumberString=="real"){
+          reading_xtn >> rvalue;
+          value=myTYPE(rvalue);
+        } else {
+          reading_xtn >> value;
+        }
+      	AA[mm-1][j - 1] = value;
+	if (localdebug){
+           if (xtnnumbertype=="rational" && OutputNumberString=="real")
+             cout << "a(" << i << "," << j << ") = " << value << " ("<< rvalue << ")\n";
+           else
+             cout << "a(" << i << "," << j << ") = " << value  << "\n";
+         }
+      }  /*of j*/
+      while (reading_xtn.get(ch) && ch != '\n') {
+        if (localdebug) cout << ch;
+      }
+
+      if (Conversion==VertexListingExternal){
+        /* Each point must be shifted w.r.t the relative interior of
+           their convex hull */
+        for (j=2; j<=nn; j++){AA[mm-1][j-1]-=center[j-1];}
+        if (localdebug){
+          for (j=1; j<=nn; j++){cout << " " << AA[mm-1][j-1];}
+          cout << "  " << i << "th point Shifted.\n";
+        }
+      }
+      if (Facet_Q2(Tope, mm, NBIndex, LPdsol)) {
+        if (DynamicWriteOn) cout << i << " e:";
+        (f) << i << " e:";
+        set_addelem(subrows,i);
+      }
+      else {
+        (f) <<  i << " r:";
+        if (DynamicWriteOn) (cout) << i << " r:";
+      }
+      long poscomp_count=0,rindex=0; 
+      for (j=1; j<nn; j++){
+        (f) << " " << NBIndex[j+1];
+        if (LPdsol[j]>zero) {poscomp_count++; rindex=NBIndex[j+1];};
+        if (LogWriteOn){
+          (f) <<"(";  WriteNumber(f,LPdsol[j]); (f) << ")";
+        }
+      }
+      if (poscomp_count==1 && RowEquivalent_Q(AA[mm-1],AA[rindex-1], nn)) {
+        (f) << " =#" << rindex;
+      } else {poscomp_count=0;}
+      (f) << "\n";
+      if (DynamicWriteOn){
+        for (j=1; j<nn; j++){
+          (cout) << " " << NBIndex[j+1];
+          if (LogWriteOn){
+            (cout) <<"(";  WriteNumber(cout,LPdsol[j]); (cout) << ")";
+          }
+        }
+      if (poscomp_count==1) cout << " =#" << rindex;
+      (cout) << "\n";
+      }
+    }
+    (f) << "end\n";
+    if (DynamicWriteOn) (cout) <<"end\n";
+    time(&endtime);
+    WriteTimes(f); WriteTimes(f_log); WriteTimes(cout);
+  _L99:;
+    reading_xtn.close();
+  } else {
+    Error=FileNotFound;
+    WriteErrorMessages(cout);
+    WriteErrorMessages(f_log);
+  }
 }
 
 void TopeListMain(ostream &f, ostream &f_log)
@@ -305,9 +527,9 @@ void TopeListMain(ostream &f, ostream &f_log)
   FindRowEquivalenceClasses(&classno, rowequiv);
   if (classno<mm) {
     cout << "*There are multiple equivalent rows!!!\n";
-    cout << "*You have to remove redundancies before listing topes. \n";
+    cout << "*You have to remove duplicates before listing topes. \n";
     (f) << "*There are multiple equivalent rows!!!\n";
-    (f) << "*You have to remove redundancies before listing topes. \n";
+    (f) << "*You have to remove duplicates before listing topes. \n";
     WriteRowEquivalence(cout, classno, rowequiv);
     WriteRowEquivalence(f, classno, rowequiv);
     goto _L99;

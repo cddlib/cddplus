@@ -1,6 +1,6 @@
 /* cddarith.C:  Arithmetic Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995 
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.C : C-Implementation of the double description method for
@@ -761,7 +761,7 @@ void FreeDDMemory(void)
   PrevPtr=ArtificialRay;
   count=0;
   for (Ptr=ArtificialRay->Next; Ptr!=NULL; Ptr=Ptr->Next){
-    delete[] PrevPtr->Ray;
+    if (!PostAnalysisOn) delete[] PrevPtr->Ray;
     delete PrevPtr->ARay;
     free(PrevPtr->ZeroSet);
     delete PrevPtr;
@@ -846,7 +846,12 @@ void FindInitialRays(rowset InitHyperplanes,
       printf("Pivotrow[%ld] = %ld \n", j, PivRow[j]);
     printf("nn = %ld, rank = %ld\n",nn,rank);
   }
-  if (rank < nn-1) {
+
+/* The case of rank==nn-1 is not treated properly and deleted
+  on Jun 8, 1996.  Check cddbag960531
+*/
+/*if (rank < nn-1) {  */
+  if (rank <= nn-1) {
     if (debug) WriteBmatrix(cout,BInverse);
     Error = LowColumnRank;
     return;
@@ -1432,12 +1437,6 @@ void AddRay(myTYPE *p)
   LastRay->Next = NULL;
   RayCount++;
   TotalRayCount++;
-  if (DynamicWriteOn) {
-    if (TotalRayCount % 100 == 0) {
-      cout << "*Rays (Total, Currently Active, Feasible) = " 
-        << TotalRayCount << " " << RayCount << " " << FeasibleRayCount << "\n";
-    }
-  }
   if (RelaxedEnumeration){
     StoreRay2(p, LastRay, &feasible, &weaklyfeasible);
     if (weaklyfeasible) WeaklyFeasibleRayCount++;
@@ -1454,6 +1453,15 @@ void AddRay(myTYPE *p)
     if (DynamicRayWriteOn) {
       WriteRayRecord(cout,LastRay);
     }
+  }
+  if (DynamicWriteOn) {
+    if (TotalRayCount % 100 == 0) {
+      cout << "*Rays (Total, Currently Active, Feasible) = " 
+        << TotalRayCount << " " << RayCount << " " << FeasibleRayCount << "\n";
+    }
+  }
+  if (PostAnalysisOn){
+       delete[] LastRay->Ray;
   }
 }
 
@@ -1540,7 +1548,7 @@ void LineShellingOrder(rowindex OV, myTYPE *z, myTYPE *d)
    z (interior point, i.e. A z > 0) and a direction vector  d */
 {
   long i,j;
-  myTYPE temp1=0,temp2=0,infinity=10.0e+20;
+  myTYPE temp1=0,temp2=0,infinity=(myTYPE)1e+20;
   boolean localdebug=False;
   myTYPE* beta;
   
@@ -1554,7 +1562,7 @@ void LineShellingOrder(rowindex OV, myTYPE *z, myTYPE *d)
       temp2 = temp2 + AA[i - 1][j-1] * d[j-1];
     }
     if (FABS(temp1)>zero) AA[i-1][0]=temp2/temp1;  
-    else if (temp1*temp2 > 0) AA[i-1][0]= infinity;
+    else if (temp1*temp2 > zero) AA[i-1][0]= infinity;
     else AA[i-1][0]= -infinity;
      /* use the first column of AA tentatively */
   }

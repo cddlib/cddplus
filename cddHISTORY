@@ -1,4 +1,4 @@
-cdd & cdd+ HISTORY file    (as of September 6, 1995)
+cdd & cdd+ HISTORY file    (as of June 17, 1996)
 
 *** cdd version (date) / changes ***
 
@@ -201,14 +201,14 @@ Version C0.56 (August 7, 1995) /
 
 *** cdd+ version (date) / changes ***
 
-ccd+ Version 0.70 (April 3, 1995) /
+cdd+ Version 0.70 (April 3, 1995) /
    The first C++ version of cdd which can run on both floating-point
    and rational (exact) arithmetics.  The basic functions are
    identical to cdd-055.  This version requires GNU gcc compilers
    (2.6.0 or higher) and a compatible g++lib.
 
 
-ccd+ Version 0.71 (April 15, 1995) /
+cdd+ Version 0.71 (April 15, 1995) /
    Two new functions (through options) are added.  The option 
    "facet_listing" checks whether each input inequality determines
    a facet or not.  The second option "tope_listing" generates
@@ -219,7 +219,7 @@ ccd+ Version 0.71 (April 15, 1995) /
    form.  Criss-cross LP solver is now sensitive to ordering
    options, lexmin, minindex, radom, etc.
 
-ccd+ Version 0.72 (April 16, 1995) /
+cdd+ Version 0.72 (April 16, 1995) /
    The option "postanalysis" is added. This option is to be used 
    after *.ext file is obtained.  When this option is set
    with adjacency and/or incidence options, one can get
@@ -227,15 +227,50 @@ ccd+ Version 0.72 (April 16, 1995) /
    files.  Thus it is not necessary to generate *.adj and *.icd
    files together with *.ext file. 
 
-ccd+ Version 0.72a (April 16, 1995) /
+cdd+ Version 0.72a (April 16, 1995) /
    Cycling bug of Version 072 of LP maximize and minimize has been 
    fixed.
 
-ccd+ Version 0.73 (Septembe 6, 1995) /
+cdd+ Version 0.73 (Septembe 6, 1995) /
    A new option "input_adjacency" has been added.
    The output format of incidence file is slightly modified. (See
    the Reference Manual cddman.tex).  This incidence file format is compatible
    with cdd-056 and we will try not to change the format any more.
 
+cdd+ Version 0.74alpha (March 30, 1996) /
+   The default output file names have been changed to be consistent
+   with the transformation.  To avoid confusion, *.ine file should
+   be used only for a system of linear inequalities, and *.ext file
+   only for a set of extreme points and rays.  Accordingly,
+   the files *.ead (previously *.adj) and *.ecd (previously *.icd)
+   are reserved for the adjacency and incidence files for the extremal
+   vertices/rays.   
+   Similarly, *.iad (previously *.iad) and *.icd (previously none)
+   are reserved for the adjacency and incidence files for the inequality
+   data.
+
+   Also, when a file with default file name exists in the current
+   directory, the default extension name will be doubled.  For instance,
+   if test.ine is input and test.ext exists, then the extreme points
+   and rays will be written in the file test.ext.ext.  The program
+   does not check "test.ext.ext" exists, and thus such a file
+   will be overwritten if exists.
+
+cdd+ Version 0.74beta (June 4, 1996) /
+   The option "vertex_listing" is added.
+   The dual simplex method uses the standard Phase I instead of 
+   the criss-cross method. Consequently the LP code is faster.
+
+cdd+ Version 0.74beta2 (June 5, 1996) /
+   Also "vertex_listing_external" and "facet_listing_external"
+   are added.  These options do "vertex_listing" and "facet_listing"
+   against the external file which can be huge.  These options are
+   useful when one has a small candidate set of vertices (or inequalities)
+   and a large set of perhaps-redundant points (or inequalities).
+   The external file must be named as "test.ext.external" (test.ine.external)
+   if the candidate input file is test.ext (test.ine).
+
+cdd+ Version 0.74 (June 17, 1996) /
+   Few minor bug fixes were made.
 
 --- end of file: cddHISTORY ---

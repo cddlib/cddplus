@@ -1,13 +1,15 @@
 file name: ucube.ine
 3 cube without one "lid"
 begin
-    5      4    integer
+    6      4    integer
   2   -1   0   0
   2    0  -1   0
  -1    1   0   0
  -1    0   1   0
  -1    0   0   1
+  4   -1  -1   0
 end
 incidence
 adjacency
 input_adjacency
+input_incidence

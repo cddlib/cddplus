@@ -1,6 +1,6 @@
-1995-09-06
+1996-06-17
 ---------------------------------------
-PROGRAM cdd+ (version 0.73) README FILE
+PROGRAM cdd+ (version 0.74) README FILE
 ---------------------------------------
 The program  cdd+  is a C++ implementation of the Double Description 
 Method of Motzkin et al. for generating all vertices (i.e. extreme points)
@@ -23,13 +23,23 @@ it can be compiled for both rational (exact) arithmetic and
 floating point arithmetic. (Note that cdd runs on floating
 arithmetic only.)  Since cdd+ uses GNU g++ library, in particular 
 Rational library, one needs a recent (2.6.0 or higher) gcc compiler
-and g++-lib.  The program seems to be most
-stable when compiled with gcc-2.6.3 and libg++-2.6.2. 
+and g++-lib.  The program seems to be 
+stable when compiled with gcc-2.6.3 and libg++-2.6.2, or
+more recent. 
 
-The new version 0.73 has a new option "input_adjacency" which lets
-the user to generate the adjacency of inputs (=facets), just like
-the adjacency of outputs (vertices/rays) is generated with 
-"adjacency" option.  
+What's new in Version 0.74?
+(1) Some changes in default names for files.  In particular,
+it is now enforced to use the extension .ine for inequality files
+and .ext for extreme point/ray files to avoid confusion.
+(2) A faster LP code (dual simplex) for dense and tall LP's,
+say, several hundred thousands inequalities in 8 variables.
+(3) New options "vertex_listing" is added to remove
+redundancy in a set of points, which might be useful
+to do before computing the convex hull.   (Note that
+facet_listing was supported by the previous version.)
+(4) The floating-point executable cddf+ can now read rational
+data (p/q) and compute with floating-point arithmetic.
+(5) Some more, see cddman.tex.
 
 The cdd+ package is in "tar"ed and "compress"ed format with name
 cdd+-***.tar.Z, where *** is the version number.  The standard
@@ -39,24 +49,16 @@ anonymous ftp site for the package is
      directory: pub/fukuda/cdd
      file name: cdd+-***.tar.gz
 
-The old ftp site
-
-     ftp site : ftp.efpl.ch (128.178.139.3)
-     directory: incoming/dma
-     file name: cdd+-***.tar.gz
-
-is no more valid.
-
 In order to unpack the package in a standard unix environment, type 
    
      % gunzip cdd+-***.tar.gz
      % tar xvf cdd+-***.tar
 
 where *** must be replaced by the appropriate version number, and
-% is a unix prompt. If you have GNU zcat command, one can simply
+% is a unix prompt. If you have GNU gzcat command, one can simply
 unpack the package at once by
 
-     % zcat cdd+-***.tar.gz | tar xvf - 
+     % gzcat cdd+-***.tar.gz | tar xvf - 
 
 The package cdd+ consists of the following files which will be
 placed in a newly created sub-directory cdd+-*** :
@@ -76,21 +78,24 @@ placed in a newly created sub-directory cdd+-*** :
      setoper.h     The header file for setoper.C 
 
      cddman.tex    Latex source file of cdd+ User Manual
+     cddman.bbl  & bibliography file of cdd+ Reference Manual\\
      cddHISTORY    brief description of changes made at each updates
-     ine           A subdirectory containing sample input files
-     ext           A subdirectory containing sample output files
+     ine           A subdirectory containing sample inequality input files
+     ext           A subdirectory containing sample points/rays input files
      COPYING       GNU GENERAL PUBLIC LICENSE
 
 Before using the software, please read COPYING and
 and read the manual cddman.tex.  
 
-To compile the manual cddman.tex (in latex format) in a standard unix 
+To compile the manual cddman.tex (in latex2e format) in a standard unix 
 environment, run the following command twice: 
 
    % latex cddman.tex
 
 to get the dvi file, cddman.dvi.  On the printing or viewing commands
 for cddman.dvi file, please ask a local system administrator.
+An html version of cddman can be created with latex2html translator
+by Nikos Drakos.  Use Version 96.1 or later.
 
 For compilation of cdd+, edit Makefile according to the local
 setup of a GNU gcc compiler and g++-library, and type
@@ -125,4 +130,4 @@ For more information, contact
    ETH Zentrum, CH-8092 Zurich, Switzerland  
    fax +41-1-632 1025   tel +41-1-632 4023 or 4028 
 
-// END of cdd.readme 
+// END of cdd+.readme 

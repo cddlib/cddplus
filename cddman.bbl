@@ -1,0 +1,49 @@
+\begin{thebibliography}{MRTT53}
+
+\bibitem[ABSar]{abs-hgach-95}
+D.~Avis, D.~Bremner, and R.~Seidel.
+\newblock How good are convex hull algorithms.
+\newblock {\em Computational Geometry: Theory and Applications}, (to appear).
+\newblock available via anonymous ftp from mutt.cs.mcgill.ca (directory
+  pub/doc).
+
+\bibitem[AF92]{af-pachv-92}
+D.~Avis and K.~Fukuda.
+\newblock A pivoting algorithm for convex hulls and vertex enumeration of
+  arrangements and polyhedra.
+\newblock {\em Discrete Comput. Geom.}, 8:295--313, 1992.
+
+\bibitem[BEFL95]{befl-cevcm-95}
+B.~Bueeler, A.~Enge, K.~Fukuda, and H.-J. L{\"u}thi.
+\newblock Exact volume computation for convex polytopes: A practical study.
+\newblock Research (in progress), IFOR, ETH Zurich, December 1995.
+\newblock ps file available from
+  \htmladdnormallink{http://www.ifor.math.ethz.ch/staff/fukuda/fukuda.html}
+  {http://www.ifor.math.ethz.ch/staff/fukuda/fukuda.html}.
+
+\bibitem[CGAF94]{cgaf-gstfl-94}
+G.~Ceder, G.D. Garbulsky, D.~Avis, and K.~Fukuda.
+\newblock Ground states of a ternary fcc lattice model with nearest and
+  next-nearest neighbor interactions.
+\newblock {\em Physical Review B}, 49(1):1--7, 1994.
+
+\bibitem[FP95]{fp-ddmr-95}
+K.~Fukuda and A.~Prodon.
+\newblock Double description method revisited.
+\newblock Technical report, Department of Mathematics, Swiss Federal Institute
+  of Technology, Lausanne, Switzerland, 1995.
+\newblock ps file available from ifor13.ethz.ch (129.132.154.13), directory
+  /pub/fukuda/reports.
+
+\bibitem[Gri90]{g-afccn-90}
+V.P. Grishukhin.
+\newblock All facets of the cut cone for $n=7$ are known.
+\newblock {\em Europ. J. Combin.}, 11:115--117, 1990.
+
+\bibitem[MRTT53]{mrtt-ddm-53}
+T.S. Motzkin, H.~Raiffa, GL. Thompson, and R.M. Thrall.
+\newblock The double description method.
+\newblock In H.W. Kuhn and A.W.Tucker, editors, {\em Contributions to theory of
+  games, Vol. 2}. Princeton University Press, Princeton, RI, 1953.
+
+\end{thebibliography}

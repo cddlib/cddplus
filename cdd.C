@@ -1,6 +1,6 @@
 /* cdd.C: Main program of the sofware cdd+
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995
+   Version 0.74, June 17, 1996 
    Standard ftp site: ifor13.ethz.ch (129.132.154.13), Directory: pub/fukuda/cdd 
 */
 
@@ -56,7 +56,7 @@ long mm, nn;   /*size of the homogenous system to be solved by dd*/
 long projdim;  /*dimension of orthogonal preprojection */
 colset projvars;   /*set of variables spanning the space of preprojection, 
      i.e. the remaining variables are to be removed*/
-rowset EqualitySet, NonequalitySet, GroundSet, Face, Face1;
+rowset EqualitySet, NonequalitySet, GroundSet, Face, Face1, SubproblemRowSet, RedundantRowSet;
 rowrange Iteration, hh;
 rowindex OrderVector;  /* the permutation vector to store a preordered row indeces */
 rowindex EqualityIndex;  
@@ -84,25 +84,25 @@ boolean RecomputeRowOrder, found, inputsuccessful;
 HyperplaneOrderType HyperplaneOrder;
 AdjacencyTestType AdjacencyTest;
 NumberType Number;
-char *InputNumberString, *OutputNumberString;
+string InputNumberString, OutputNumberString;
 InequalityType Inequality;
 boolean NondegAssumed;   /* Nondegeneacy preknowledge flag */
 boolean InitBasisAtBottom;  /* if it is on, the initial Basis will be selected at bottom */
 boolean RestrictedEnumeration; /* Restricted enumeration switch (True if it is restricted on the intersection of EqualitySet hyperplanes) */
 boolean RelaxedEnumeration; /* Relaxed enumeration switch (True if NonequalitySet inequalities must be satisfied with strict inequality) */
-boolean RowDecomposition; /* Row decomposition enumeration switch */
 boolean VerifyInput; /* Verification switch for the input data */
 boolean PreOrderedRun; 
   /* True if the rows are ordered before execution & all necessary adjacencies are stored */
 CompStatusType CompStatus;  /* Computation Status */
 ConversionType Conversion;
+SpecialConversionType SpecialConversion;  /* rowdecomposition, rowsubproblem */
 LPsolverType LPsolver;
 IncidenceOutputType IncidenceOutput;
 AdjacencyOutputType AdjacencyOutput;
 ErrorType Error;
 FileInputModeType FileInputMode;
 DataFileType inputfile,ifilehead,ifiletail,
-  outputfile,projfile,icdfile,adjfile,iadfile,logfile,dexfile,verfile;
+  outputfile,projfile,incfile,adjfile,logfile,dexfile,verfile,xtnfile;
 time_t starttime, endtime;
 unsigned int rseed=1;  /* random seed for random row permutation */
 
@@ -121,6 +121,7 @@ void DefaultOptionSetup(void)
   PreOrderedRun=True;
   VerifyInput=False;
   Conversion = IneToExt;
+  SpecialConversion = Nothing;
   LPsolver = DualSimplex;   
  
   IncidenceOutput = IncOff;
@@ -186,11 +187,19 @@ void DDEnumerate(ostream &f, ostream &f_log)
     InitialWriting(f, f_log);
     DDMain(f, f_log);
     WriteExtFile(f, f_log);
-    if (IncidenceOutput == IncSet){
-      SetWriteFileName(icdfile, 'i', "incidence");
-      ofstream writing_icd(icdfile);
-      WriteIncidenceFile(writing_icd);
-      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    if (IncidenceOutput == OutputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'i', "incidence");
+      ofstream writing_ocd(incfile);
+      WriteIncidenceFile(writing_ocd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_ocd.close();
+    }
+    if (IncidenceOutput == InputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'n', "input_incidence");
+      ofstream writing_icd(incfile);
+      WriteInputIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_icd.close();
     }
     if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
@@ -201,12 +210,12 @@ void DDEnumerate(ostream &f, ostream &f_log)
       if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
     }
     if (AdjacencyOutput == InputAdjacency || AdjacencyOutput == IOAdjacency){
-      SetWriteFileName(iadfile, 'j', "input_adjacency");
-      ofstream writing_iad(iadfile);
-      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",iadfile);
+      SetWriteFileName(adjfile, 'j', "input_adjacency");
+      ofstream writing_iad(adjfile);
+      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",adjfile);
       WriteInputAdjacencyFile(writing_iad);
       writing_iad.close();
-      if (DynamicWriteOn) printf("closing the file %s\n",iadfile);
+      if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
     }
     FreeDDMemory();
   } else {
@@ -282,11 +291,19 @@ void DDRowDecomposition(ostream &f, ostream &f_log)
   RestrictedEnumeration=False;
   RelaxedEnumeration=False;
   WriteExtFile(f, f_log);
-  if (IncidenceOutput == IncSet){
-    SetWriteFileName(icdfile, 'i', "incidence");
-    ofstream writing_icd(icdfile);
-    WriteIncidenceFile(writing_icd);
-    if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+  if (IncidenceOutput == OutputIncidence || IncidenceOutput == IOIncidence){
+    SetWriteFileName(incfile, 'i', "incidence");
+    ofstream writing_ocd(incfile);
+    WriteIncidenceFile(writing_ocd);
+    if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+    writing_ocd.close();
+  }
+  if (IncidenceOutput == InputIncidence || IncidenceOutput == IOIncidence){
+    SetWriteFileName(incfile, 'n', "input_incidence");
+    ofstream writing_icd(incfile);
+    WriteInputIncidenceFile(writing_icd);
+    if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+    writing_icd.close();
   }
   if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
     SetWriteFileName(adjfile, 'a', "adjacency");
@@ -298,6 +315,20 @@ void DDRowDecomposition(ostream &f, ostream &f_log)
   }
   writing_dex.close();
   FreeDDMemory();
+}
+
+void SolveRowSubproblem(ostream &f, ostream &f_log)
+{
+/* 
+  This is not complete.  This part should be very similar to
+  DDenumerate.  The only difference is that this first read the 
+  rows specified by SubProblemRowSet, set mm, nn, etc properly
+  and run DDenumerate.  For this, AmatrixInput must be modified
+  so that it does not read the matrix data for this mode: 
+    SpecialConversion=RowSubproblemSolve.
+  Then it is necessary to make a new AmatrixInput program which
+  reads a specified set of rows for the matrix AA.  
+*/
 }
 
 void PreProjection(ostream &f, ostream &f_log)
@@ -381,11 +412,19 @@ void PreProjection(ostream &f, ostream &f_log)
     InitialWriting(f, f_log);
     DDMain(f,f_log);
     WriteProjResult(f, f_log, pivrow);
-    if (IncidenceOutput == IncSet){
-      SetWriteFileName(icdfile, 'i', "incidence");
-      ofstream writing_icd(icdfile);
-      WriteIncidenceFile(writing_icd);
-      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    if (IncidenceOutput == OutputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'i', "incidence");
+      ofstream writing_ocd(incfile);
+      WriteIncidenceFile(writing_ocd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_ocd.close();
+    }
+    if (IncidenceOutput == InputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'n', "input_incidence");
+      ofstream writing_icd(incfile);
+      WriteInputIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_icd.close();
     }
     if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
@@ -408,82 +447,6 @@ void PreProjection(ostream &f, ostream &f_log)
   set_free(&subcols2);
 }
 
-
-int main(int argc, char *argv[])
-{
-  OutputHeading();
-  DefaultOptionSetup();
-  Initialization(argc, argv);
-  AmatrixInput(&inputsuccessful);
-
-  if (inputsuccessful) {
-    SetWriteFileName(logfile,'l',"log");
-    ofstream writing_log(logfile);
-    if (VerifyInput){
-      SetWriteFileName(verfile,'v',"input verification");
-      ofstream writing_ver(verfile);
-      WriteSolvedProblem(writing_ver);
-      writing_ver.close();
-      if (DynamicWriteOn) printf("closing the file %s\n",verfile);
-     }
-    if (DynamicWriteOn) {
-      WriteRunningMode(cout);
-    }
-    SetWriteFileName(outputfile,'o',"output");
-    if (PostAnalysisOn){
-      /* Post analysis is chosen */
-      ifstream reading_ext(outputfile);
-      PostAnalysisMain(reading_ext, writing_log);
-    }
-    else {
-      ofstream writing(outputfile);
-      switch (Conversion) {
-      case ExtToIne: case IneToExt: /* vertex/facets enumeration is chosen */
-        if (RowDecomposition) DDRowDecomposition(writing,writing_log);
-        else DDEnumerate(writing, writing_log);
-        break;
-    
-      case LPmax:  case LPmin:      /* LP is chosen */
-        LPMain(writing, writing_log);
-        break;
-
-      case FacetListing:          /* FacetListing is chosen */
-        FacetListMain(writing, writing_log);
-        break;
-
-      case TopeListing:           /* FacetListing is chosen */
-        TopeListMain(writing, writing_log);
-        break;
-
-      case Projection:            /* preprojection is chosen */
-        PreProjection(writing, writing_log);
-        break;
-
-      case InteriorFind:      /* Interior point search is chosen */
-        boolean found;
-        InteriorFindMain(writing, writing_log, &found);
-        break;
-  
-      default: break;
-      }
-      if (writing.is_open()) {
-        writing.close();
-        if (DynamicWriteOn) printf("closing the file %s\n",outputfile);
-      }   
-    }
-    if (writing_log.is_open()) {
-      writing_log.close();
-      if (DynamicWriteOn) printf("closing the file %s\n",logfile);
-    }
-  } else {
-    ofstream writing("cdd.error");
-    WriteErrorMessages(writing);
-    writing.close();
-  }
-
-  /* DumpProfile();    THINK C PROFILER */
-  /* exit(0);          THINK C PROFILER */
-}
 
 
 void CompileDecompResult(ofstream &f)
@@ -549,11 +512,19 @@ void  PostAnalysisMain(ifstream &f, ostream &f_log)
     RestrictedEnumeration=False;
     RelaxedEnumeration=False;
     for (i=1; i<=mm; i++) set_addelem(AddedHyperplanes, i);
-    if (IncidenceOutput == IncSet){
-      SetWriteFileName(icdfile, 'i', "incidence");
-      ofstream writing_icd(icdfile);
-      WriteIncidenceFile(writing_icd);
-      if (DynamicWriteOn) printf("closing the file %s\n",icdfile);
+    if (IncidenceOutput == OutputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'i', "incidence");
+      ofstream writing_ocd(incfile);
+      WriteIncidenceFile(writing_ocd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_ocd.close();
+    }
+    if (IncidenceOutput == InputIncidence || IncidenceOutput == IOIncidence){
+      SetWriteFileName(incfile, 'n', "input_incidence");
+      ofstream writing_icd(incfile);
+      WriteInputIncidenceFile(writing_icd);
+      if (DynamicWriteOn) printf("closing the file %s\n",incfile);
+      writing_icd.close();
     }
     if (AdjacencyOutput == OutputAdjacency || AdjacencyOutput == IOAdjacency){
       SetWriteFileName(adjfile, 'a', "adjacency");
@@ -564,12 +535,12 @@ void  PostAnalysisMain(ifstream &f, ostream &f_log)
       if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
     }
     if (AdjacencyOutput == InputAdjacency || AdjacencyOutput == IOAdjacency){
-      SetWriteFileName(iadfile, 'j', "input_adjacency");
-      ofstream writing_iad(iadfile);
-      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",iadfile);
+      SetWriteFileName(adjfile, 'j', "input_adjacency");
+      ofstream writing_iad(adjfile);
+      if (DynamicWriteOn) printf("Writing the input_adjacency file %s...\n",adjfile);
       WriteInputAdjacencyFile(writing_iad);
       writing_iad.close();
-      if (DynamicWriteOn) printf("closing the file %s\n",iadfile);
+      if (DynamicWriteOn) printf("closing the file %s\n",adjfile);
     }
     FreeDDMemory();
   } else {
@@ -579,54 +550,17 @@ void  PostAnalysisMain(ifstream &f, ostream &f_log)
   }
 }
 
-void ReadExtFile(ifstream &f)
+void LPInit(void)
 {
-  long i,j,k;
-  myTYPE value=0;
-  long mray,nray;
-  char numbtype[wordlenmax],command[wordlenmax];
-  boolean localdebug=True;
-  myTYPE* vec;
-  
-  vec = new myTYPE[mm];
-  AddArtificialRay();
-  if (!f.is_open()) {
-    Error=ImproperInputFormat;
-    goto _L99;
-  };
-  found=False;
-  while (!found)
-  {
-    if (f.eof()) {
-     Error=ImproperInputFormat;
-     goto _L99;
-    }
-    else {
-      f >> command;
-      if (strncmp(command, "begin", 5)==0) {
-        found=True;
-      }
-    }
-  }
-  f >> mray;
-  f >> nray;
-  f >> numbtype;
-  if (localdebug) printf("ext object size = %ld x %ld\nNumber Type = %s\n", mray, nray, numbtype);
-  for (k=1; k<=mray;k++){
-    for (j=1; j<=nray; j++){
-      f >> value;
-      if (Inequality==NonzeroRHS) {
-        vec[j - 1] = value;
-      } else if (j>=2) {
-        vec[j - 2] = value;
-      }
-      if (localdebug) WriteNumber(cout, value);
-    }
-    if (localdebug) printf("\n");
-    AddRay(vec);
-  }
-_L99:;
+  rowrange i;
+
+  Error=None;
+  CompStatus=InProgress;
+  if (debug) WriteAmatrix(cout,AA,mm,nn, Inequality);
+  OrderVector = new long[mm+3];/* two more element for auxiliary variables */
+  for (i=1; i<=mm+3; i++) OrderVector[i-1]=i-1; 
 }
+
 
 void DDInit(void)
 {
@@ -702,13 +636,14 @@ void InitialDataSetup(void)
 
 void LPMain(ostream &f, ostream &f_log)
 {
-  colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
-  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
+  static Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static Bmatrix BasisInv;
+
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
-  Bmatrix BasisInv;
 
   if (Inequality==ZeroRHS){
     // printf("Sorry, LP optimization is not implemented for RHS==0.\n");
@@ -718,32 +653,43 @@ void LPMain(ostream &f, ostream &f_log)
   time(&starttime);
   LPsol = new myTYPE[nn];
   LPdsol = new myTYPE[nn];
-  InitializeBmatrix(BasisInv); 
+  InitializeBmatrix(BasisInv);
+  boolean UsePrevBasis=False;
   if (Conversion==LPmax){
-    CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
-      &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    if (LPsolver==DualSimplex){
+      DualSimplexMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, UsePrevBasis,
+        &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    } else {
+      CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, UsePrevBasis,
+        &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    }
   }
   else if (Conversion==LPmin){
-    CrissCrossMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
-      &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    if (LPsolver==DualSimplex){
+      DualSimplexMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, UsePrevBasis,
+        &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    } else {
+      CrissCrossMinimize(f, f_log, AA, BasisInv, OBJrow, RHScol, UsePrevBasis,
+        &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
+    }
   }
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
 _L99:;
-  delete[] LPsol;  delete[] LPdsol; 
-  free_Bmatrix(BasisInv);
 }
 
 void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
 {
-  colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
-  Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static colindex NBIndex;  /* NBIndex[s] stores the nonbasic variable in column s */ 
+  static Arow LPsol, LPdsol;  /*  LP solution and the dual solution (basic var only) */
+  static Bmatrix BasisInv;
+
   rowrange re;  /* evidence row when LP is inconsistent */
   colrange se;  /* evidence col when LP is dual-inconsistent */
   myTYPE ov=0;  /* LP optimum value */
   long LPiter;
-  Bmatrix BasisInv;
+  boolean UsePrevBasis=False;
 
   *found = False;
   if (Inequality==ZeroRHS){
@@ -756,16 +702,174 @@ void InteriorFindMain(ostream &f, ostream &f_log, boolean *found)
   LPdsol = new myTYPE[nn]; 
   time(&starttime);
   OBJrow=mm; RHScol=1;
-  CrissCrossMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, 
+  DualSimplexMaximize(f, f_log, AA, BasisInv, OBJrow, RHScol, UsePrevBasis,
     &LPStatus, &ov, LPsol, LPdsol,NBIndex, &re, &se, &LPiter);
   WriteLPResult(f, LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
   if (LPStatus==Optimal || LPStatus==DualInconsistent) *found=True;
   if (DynamicWriteOn)
     WriteLPResult(cout,LPStatus, ov, LPsol, LPdsol, NBIndex, re, se, LPiter);
-  free_Bmatrix(BasisInv);
   RecoverAAafterInteriorFinding();
 _L99:;
-  delete[] LPsol;  delete[] LPdsol;
+}
+
+void CheckConversionConsistency(ostream &f, ostream &f_log)
+{
+  switch (Conversion) {
+  case ExtToIne: /* facet enumeration is chosen */
+    if (strcmp(ifiletail,"ext")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ext'' for hull computation.\n";
+      f << "*Warning: Extension of inputfile name should ``.ext'' for hull computation.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ext'' for hull computation.\n";
+    }
+    break;
+
+  case IneToExt: /* vertex enumeration is chosen */
+    if (strcmp(ifiletail,"ine")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ine'' for vertex/ray enumeration.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ine'' for vertex/ray enumeration.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ine'' for vertex/ray enumeration.\n";
+    }
+    break;
+    
+  case LPmax:  case LPmin:  case InteriorFind:    /* LP is chosen */
+    if (strcmp(ifiletail,"ine")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ine'' for LP optimization/interior_find.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ine'' for LP optimization/interior_find.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ine'' for LP optimization/interior_find.\n";
+    }
+    break;
+
+  case FacetListing: case FacetListingExternal: 
+           /* Facet Listing is chosen */
+    if (strcmp(ifiletail,"ine")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ine'' for facet_listing.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ine'' for facet_listing.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ine'' for facet_listing.\n";
+    }
+    break;
+
+   case VertexListing:  case VertexListingExternal:
+        /* Vertex Listing with ExternalFile is chosen */
+    if (strcmp(ifiletail,"ext")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ext'' for vertex_listing.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ext'' for vertex_listing.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ext'' for vertex_listing.\n";
+    }
+    break;
+  
+  case TopeListing:           /* TopeListing is chosen */
+    if (strcmp(ifiletail,"ine")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ine'' for tope_listing.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ine'' for tope_listing.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ine'' for tope_listing.\n";
+    }
+    break;
+
+  case Projection:            /* preprojection is chosen */
+    if (strcmp(ifiletail,"ine")!=0){
+      cout << "*Warning: Extension of inputfile name should be ``.ine'' for preprojection.\n";
+      f << "*Warning: Extension of inputfile name should be ``.ine'' for preprojection.\n";
+      f_log << "*Warning: Extension of inputfile name should be ``.ine'' for preprojection.\n";
+    }
+    break;
+
+  default: break;
+  }
+}
+
+int main(int argc, char *argv[])
+{
+  OutputHeading();
+  DefaultOptionSetup();
+  Initialization(argc, argv);
+  AmatrixInput(&inputsuccessful);
+
+  if (inputsuccessful) {
+    SetWriteFileName(logfile,'l',"log");
+    ofstream writing_log(logfile);
+    if (VerifyInput){
+      SetWriteFileName(verfile,'v',"input verification");
+      ofstream writing_ver(verfile);
+      WriteSolvedProblem(writing_ver);
+      writing_ver.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",verfile);
+     }
+    if (DynamicWriteOn) {
+      WriteRunningMode(cout);
+    }
+    SetWriteFileName(outputfile,'o',"output");
+    if (PostAnalysisOn){
+      /* Post analysis is chosen */
+      ifstream reading_ext(outputfile);
+      PostAnalysisMain(reading_ext, writing_log);
+    }
+    else {
+      ofstream writing(outputfile);
+      CheckConversionConsistency(writing,writing_log);
+      switch (Conversion) {
+      case ExtToIne: case IneToExt: /* vertex/facets enumeration is chosen */
+        switch (SpecialConversion){
+        case RowDecomposition:
+          DDRowDecomposition(writing,writing_log);
+          break;
+        case RowSubproblemSolve:
+          SolveRowSubproblem(writing,writing_log);
+          break; 
+        case Nothing:
+          DDEnumerate(writing, writing_log);
+          break;
+        }
+        break;
+    
+      case LPmax:  case LPmin:      /* LP is chosen */
+        LPInit();
+        LPMain(writing, writing_log);
+        break;
+
+      case FacetListing: case VertexListing:
+                          /* Facet or Vertex Listing is chosen */
+        LPInit();
+        FacetandVertexListMain(writing, writing_log);
+        break;
+
+      case FacetListingExternal: case VertexListingExternal:
+        /* Facet or Vertex Listing with ExternalFile is chosen */
+        LPInit();
+        FacetandVertexExternalListMain(writing, writing_log);
+        break;
+  
+      case TopeListing:           /* TopeListing is chosen */
+        LPInit();
+        TopeListMain(writing, writing_log);
+        break;
+
+      case Projection:            /* preprojection is chosen */
+        PreProjection(writing, writing_log);
+        break;
+
+      case InteriorFind:      /* Interior point search is chosen */
+        boolean found;
+        LPInit();
+        InteriorFindMain(writing, writing_log, &found);
+        break;
+
+      default: break;
+      }
+      if (writing.is_open()) {
+        writing.close();
+        if (DynamicWriteOn) printf("closing the file %s\n",outputfile);
+      }   
+    }
+    if (writing_log.is_open()) {
+      writing_log.close();
+      if (DynamicWriteOn) printf("closing the file %s\n",logfile);
+    }
+  } else {
+    ofstream writing("cdd.error");
+    WriteErrorMessages(writing);
+    writing.close();
+  }
+
 }
 
 

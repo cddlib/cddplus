@@ -1,0 +1,38 @@
+gawk '
+BEGIN {
+	skip=1;fopen=0;linenumb=0;
+}
+/^begin/ { skip=0;card=0; next}
+/^end/   { skip=1; next}
+{ 
+  if (skip==1){
+	i0=match($0,/Input File/); i1=match($0,/\:/); i2=match($0,/\(/);
+	if (i0>0 && i1 > 0 && i2>0){
+		fname=substr($0,i1+1,i2-i1-1);
+        	printf("Extract the essential part of file %s.\n",fname);
+		getline line < fname;
+		fopen=1;
+		while (match(line,/begin/)==0) {
+			getline line <fname
+		}
+		getline dim <fname; split(dim,dvec);
+	 	printf("begin\n");printf("   ******** %s  %s\n", dvec[2], dvec[3])
+	}
+  }
+  if (fopen && skip==0) {
+	getline line <fname;
+	linenumb++;
+  }
+  if (skip==0 && $2=="e:" ){
+	card=card+1;
+  	printf("%s   #%d\n",line, linenumb);
+	if (linenumb!= +$1) printf("unmatching line numbers!!!\n")
+  }
+}
+END {
+	printf("end\nhull\n");
+	printf("*You must edit this output before running cdd\n");
+	printf("*by replacing ******** above by no of points below:\n");
+	if (card > 0) {printf("no of lines = %1s\n", card);}\
+		else {printf("no appropriate data\n")} 
+}'

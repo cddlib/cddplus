@@ -1,6 +1,6 @@
 /* cddtype.h: Arithmetic type header file for cdd.C 
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995 
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -11,11 +11,12 @@
 */
 
 
-#ifdef	RATIONAL
 #include <Rational.h>
+
+#ifdef	RATIONAL
 #define ZERO 0
 #else
-#define	ZERO 1.0E-5
+#define	ZERO 1.0E-6
 #endif	RATIONAL
 
 /* end of cddtype.h */

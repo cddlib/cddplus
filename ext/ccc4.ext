@@ -1,29 +1,17 @@
-* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
-* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
-* Compiled for Floating-Point Arithmetic
-*Input File:ccc4.ine(7x7)
-*HyperplaneOrder: LexMin
-*Degeneracy preknowledge for computation: None (possible degeneracy)
-*Hull computation is chosen.
-*Computation starts     at Fri Sep  8 17:14:43 1995
-*            terminates at Fri Sep  8 17:14:44 1995
-*Total processor time = 1 seconds
-*                     = 0h 0m 1s
-*Since hull computation is chosen, the output is a minimal inequality system
-*FINAL RESULT:
-*Number of Facets =12
+file name: ccc4.ext
+Complete cut cone on 4 vertices
+The number of facets is 12.
 begin
-12  7  real
- 0 0 1 1 0 0 -1
- 0 1 0 1 0 -1 0
- 0 1 1 0 -1 0 0
- 0 1 0 -1 0 1 0
- 0 1 -1 0 1 0 0
- 0 0 0 0 1 1 -1
- 0 0 1 -1 0 0 1
- 0 0 0 0 1 -1 1
- 0 -1 1 0 1 0 0
- 0 0 0 0 -1 1 1
- 0 0 -1 1 0 0 1
- 0 -1 0 1 0 1 0
+    7    7    integer
+ 0  1  1  1  0  0  0 
+ 0  0  1  1  1  1  0 
+ 0  1  0  1  1  0  1 
+ 0  1  1  0  0  1  1 
+ 0  0  0  1  0  1  1 
+ 0  0  1  0  1  0  1 
+ 0  1  0  0  1  1  0
 end
+hull
+incidence
+adjacency
+

@@ -1,7 +1,7 @@
 /* setoper.C:
  * A set operation library 
  * created by Komei Fukuda, April 3, 1995
- * Last modified, August 7, 1995
+ * Last modified, June 19, 1996
 */
 
 #include <fstream.h>
@@ -10,9 +10,23 @@ extern "C" {
 #include "setoper.h"
 }
 
+#include <limits.h>
+#define SETBITS (sizeof(long) * CHAR_BIT)
+/* (Number of chars in a long) * (number of bits in a char) */
+
+
 /* Definitions for optimized set_card function 
    by David Bremner bremner@cs.mcgill.ca  
- */
+*/
+/* Caution!!!
+   Bremner's technique depends on the assumption that CHAR_BIT == 8.
+*/
+
+
+typedef unsigned char set_card_lut_t;
+
+#define LUTBLOCKS(set) (((set[0]-1)/SETBITS+1)*(sizeof(long)/sizeof(set_card_lut_t)))
+
 static unsigned char set_card_lut[]={
 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
 1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
@@ -25,9 +39,9 @@ static unsigned char set_card_lut[]={
 
 long set_blocks(unsigned long len)
 {
-	long blocks;
+	long blocks=1L;
 	
-	blocks=((long)len-1)/SETBITS+2;
+	if (len>0) blocks=((long)len-1)/SETBITS+2;
 	// cout << "length =" << len << "   blocks =" << blocks <<"\n";
 	return blocks;
 }
@@ -227,7 +241,7 @@ void set_fwrite(ostream &f,set_type set)
 
 void set_binwrite(set_type set)
 {
-	int i,j;
+	long i,j;
 	long forlim;
 	unsigned long e1,e2;
 	
@@ -251,7 +265,7 @@ void set_binwrite(set_type set)
 
 void set_fbinwrite(ostream &f,set_type set)
 {
-	int i,j;
+	long i,j;
 	long forlim;
 	unsigned long e1,e2;
 	

@@ -1,41 +1,33 @@
-* cdd+: Double Description Method in C++:Version 0.73 (September 6, 1995)
-* Copyright (C) 1995, Komei Fukuda, fukuda@ifor.math.ethz.ch
-* Compiled for Floating-Point Arithmetic
-*Input File:reg24-5.ine(24x5)
-*HyperplaneOrder: LexMin
-*Degeneracy preknowledge for computation: None (possible degeneracy)
-*Hull computation is chosen.
-*Computation starts     at Fri Sep  8 17:20:06 1995
-*            terminates at Fri Sep  8 17:20:07 1995
-*Total processor time = 1 seconds
-*                     = 0h 0m 1s
-*Since hull computation is chosen, the output is a minimal inequality system
-*FINAL RESULT:
-*Number of Facets =24
+The vertices of a self-dual 4-dim regular polytope
+with 24 octahedron facets.  
+We use hull option to compute all (24) facet inequalities.
 begin
-24  5  real
- 2 0 -1 -1 0
- 2 0 0 -1 -1
- 2 0 -1 0 -1
- 2 0 -1 1 0
- 2 0 0 1 -1
- 2 0 1 -1 0
- 2 0 1 0 -1
- 2 0 1 1 0
- 2 1 -1 0 0
- 2 1 0 0 -1
- 2 1 0 1 0
- 2 1 1 0 0
- 2 1 0 0 1
- 2 1 0 -1 0
- 2 0 1 0 1
- 2 0 0 1 1
- 2 0 -1 0 1
- 2 0 0 -1 1
- 2 -1 0 0 1
- 2 -1 1 0 0
- 2 -1 0 1 0
- 2 -1 0 0 -1
- 2 -1 0 -1 0
- 2 -1 -1 0 0
+  24  5  integer
+ 1  1  1  1  1
+ 1  1  1  1 -1
+ 1  1  1 -1  1
+ 1  1  1 -1 -1
+ 1  1 -1  1  1
+ 1  1 -1  1 -1
+ 1  1 -1 -1  1
+ 1  1 -1 -1 -1
+ 1 -1  1  1  1
+ 1 -1  1  1 -1
+ 1 -1  1 -1  1
+ 1 -1  1 -1 -1
+ 1 -1 -1  1  1
+ 1 -1 -1  1 -1
+ 1 -1 -1 -1  1
+ 1 -1 -1 -1 -1
+ 1  2  0  0  0
+ 1  0  2  0  0
+ 1  0  0  2  0
+ 1  0  0  0  2
+ 1 -2  0  0  0
+ 1  0 -2  0  0
+ 1  0  0 -2  0
+ 1  0  0  0 -2
 end
+hull
+incidence
+adjacency

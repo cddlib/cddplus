@@ -1,6 +1,6 @@
 /* cddio.C:  Basic Input and Output Procedures for cdd.C
    written by Komei Fukuda, fukuda@ifor.math.ethz.ch
-   Version 0.73, September 6, 1995 
+   Version 0.74, June 17, 1996 
 */
 
 /* cdd.C : C++-Implementation of the double description method for
@@ -63,12 +63,14 @@ void SetInputFile(boolean *success)
     }
     if (dotpos>0){
       strncpy(ifilehead, inputfile, dotpos-1);
+      strcpy(ifiletail, &(inputfile[dotpos]));
     }else{
       strcpy(ifilehead, inputfile);
     }
     if (debug){
       printf("inputfile name: %s\n", inputfile);  
       printf("inputfile name head: %s\n", ifilehead);  
+      printf("inputfile name tail: %s\n", ifiletail);  
       printf("semicolon pos: %d\n", semipos);
     }  
     ifstream ftemp(inputfile);
@@ -91,16 +93,52 @@ void SetWriteFileName(DataFileType fname, char cflag, char *fscript)
 {
   boolean quit=False;
   char *extension;
+  DataFileType newname;
   
   switch (cflag) {
     case 'o':
-      extension=".ext";break;   /* vertex and ray output file; general output file */
-    case 'a':
-      extension=".adj";break;   /* adjacency file */
-    case 'i':
-      extension=".icd";break;   /* incidence file */
-    case 'j':
-      extension=".iad";break;   /* input adjacency file */
+      switch (Conversion) {
+        case ExtToIne:
+          extension=".ine"; break;     /* output file for ine data */
+        case IneToExt:   case Projection:
+          extension=".ext"; break;     /* output file for ext data */
+        case FacetListing:  case FacetListingExternal:
+          extension=".fis"; break;     /* output file for facet_listing */
+        case VertexListing: case VertexListingExternal:
+          extension=".vis"; break;     /* output file for vertex_listing */
+        case TopeListing:
+          extension=".tis"; break;     /* output file for tope_listing */
+        case LPmax:  case LPmin:  case InteriorFind:
+          extension=".lps"; break;     /* output file for LPmax, LPmin, interior_find */
+        default:
+        extension=".xxx";break;
+      }
+      break;
+
+    case 'a':         /* decide for output adjacence */
+      if (Conversion==IneToExt)
+        extension=".ead";       /* adjacency file for ext data */
+      else
+        extension=".iad";       /* adjacency file for ine data */
+      break;
+    case 'i':         /* decide for output incidence */
+      if (Conversion==IneToExt)
+        extension=".ecd";       /* ext incidence file */
+      else
+        extension=".icd";       /* ine incidence file */
+      break;
+    case 'n':         /* decide for input incidence */
+      if (Conversion==IneToExt)
+        extension=".icd";       /* ine incidence file */
+      else
+        extension=".ecd";       /* ext incidence file */
+      break;
+    case 'j':        /* decide for input adjacence */
+      if (Conversion==IneToExt)
+        extension=".iad";       /* ine adjacency file */
+      else
+        extension=".ead";       /* ext adjacency file */
+      break;
     case 'l':
       extension=".ddl";break;   /* log file */
     case 'd':
@@ -109,6 +147,69 @@ void SetWriteFileName(DataFileType fname, char cflag, char *fscript)
       extension="sub.ine";break;  /* preprojection sub inequality file */
     case 'v':
       extension=".solved";break;  /* verify_input file */
+    default:
+      extension=".xxx";break;
+  }
+  if (FileInputMode==Manual){
+    while (!quit) {
+      printf("\n>> %s file name (*%s)   : ",fscript, extension);
+      scanf("%s",fname);
+      if (fname[0]==';'|| fname[0]<'0'){
+        quit=True;  /* default file name */
+      } 
+      else if (strcmp(inputfile, fname)!=0){
+        goto _L99;
+      }
+      else {
+        printf("%s file %s must have a name different from inputfile.\n",fscript,fname);
+      }
+    }
+  }
+  /* Auto or SemiAuto FileInput */
+  strcpy(fname,ifilehead); 
+  strcat(fname,extension); 
+  if (strcmp(inputfile, fname)==0) {
+    strcpy(fname,inputfile); 
+    strcat(fname,extension); 
+  }
+_L99:;
+  ifstream reading_tmp(fname);
+  if (reading_tmp.is_open()) {
+    if (!PostAnalysisOn || cflag !='o') {  
+    /* rename the file only when it is not for postanalysis inputfiles nor external file */
+      strcpy(newname,fname);  
+      strcat(newname,".old");
+      rename(fname,newname);
+      if (DynamicWriteOn){
+        printf("Default output file %s exists.\n",fname);
+        printf("Caution: The old file %s is renamed to %s!\n",fname,newname);
+        printf("Create a new file %s.\n",fname);
+      }
+    }
+  }
+  reading_tmp.close();
+  if (DynamicWriteOn) printf("Open %s file %s.\n",fscript,fname);
+}
+
+void SetReadFileName(DataFileType fname, char cflag, char *fscript)
+{
+  boolean quit=False;
+  char *extension;
+  DataFileType newname;
+  
+  switch (cflag) {
+    case 'o':
+      if (Conversion==ExtToIne)
+        extension=".ine";       /* output file for ine data */
+      else
+        extension=".ext";       /* output file for ext data, and for any other conversions */
+      break;
+    case 'x':
+      if (Conversion==FacetListingExternal)
+        extension=".ine.external";       /* external ine file */
+      else
+        extension=".ext.external";       /* external ext file */
+      break;
     default:
       extension=".xxx";break;
   }
@@ -155,7 +256,11 @@ void SetNumberType(string line)
     InputNumberString="rational";
     OutputNumberString="rational";
 #ifndef RATIONAL
-    Error=ImproperExecutable; /* the executable cannot handle rational data */ 
+    // the executable cannot handle rational data so it converts to real 
+    // modified on 1996-02-18 
+    Number = Real;
+    InputNumberString="rational";
+    OutputNumberString="real";
 #endif
     return;
   }
@@ -203,11 +308,21 @@ void ProcessCommandLine(ifstream &f, string line)
     return;
   }
   if (line== "incidence") {
-    IncidenceOutput = IncSet;
+    if (IncidenceOutput==InputIncidence || IncidenceOutput==IOIncidence)
+      IncidenceOutput=IOIncidence;
+    else
+      IncidenceOutput = OutputIncidence;
     return;
   }
   if (line== "#incidence") {
     IncidenceOutput = IncCardinality;
+    return;
+  }
+  if (line== "input_incidence") {
+    if (IncidenceOutput==OutputIncidence || IncidenceOutput==IOIncidence)
+      IncidenceOutput=IOIncidence;
+    else
+      IncidenceOutput = InputIncidence;
     return;
   }
   if (line== "adjacency") {
@@ -289,7 +404,7 @@ void ProcessCommandLine(ifstream &f, string line)
     debug = True;
     return;
   }
-  if ((line== "partial_enum" || line=="equality") 
+  if ((line== "partial_enumeration" || line=="equality") 
     && RestrictedEnumeration==False) {
     (f) >> msize;
     for (j=1;j<=msize;j++) {
@@ -304,7 +419,7 @@ void ProcessCommandLine(ifstream &f, string line)
     RestrictedEnumeration=True;
     return;
   }
-  if (line== "strict_ineq" && RelaxedEnumeration==False) {
+  if (line== "strict_inequality" && RelaxedEnumeration==False) {
     (f) >> msize;
     for (j=1;j<=msize;j++) {
       (f) >> var;
@@ -312,7 +427,7 @@ void ProcessCommandLine(ifstream &f, string line)
     }
     printf("\n");
     if (Conversion==Projection) {
-      printf("Warning: Partial Projection is cancelled because it cannot be compatible with Partial Enumeration.\n");
+      printf("Warning: Partial Projection is cancelled because it is not compatible with Partial Enumeration.\n");
       Conversion=IneToExt;
     }
     RelaxedEnumeration=True;
@@ -331,6 +446,19 @@ void ProcessCommandLine(ifstream &f, string line)
         set_addelem(projvars,var);
     }
     Conversion=Projection;
+    return;
+  }
+  if (line== "solve_rowsubproblem" && SpecialConversion!=RowSubproblemSolve) {
+    set_initialize(&SubproblemRowSet,minput+1);
+    set_initialize(&RedundantRowSet,minput+1);
+    if (debug) printf("solve_rowsubproblem is chosen.\n");
+
+    (f) >> msize;
+    for (j=1;j<=msize;j++) {
+      (f) >> var;
+      set_addelem(SubproblemRowSet,var);
+    }
+    SpecialConversion=RowSubproblemSolve;
     return;
   }
   if (line== "maximize" && Conversion != LPmax) {
@@ -366,9 +494,24 @@ void ProcessCommandLine(ifstream &f, string line)
     Conversion=InteriorFind;
     return;
   }
-  if (line== "facet_listing" && Conversion != LPmax && Conversion != LPmin) {
+  if (line== "facet_listing" && Conversion != LPmax && Conversion != FacetListing) {
     if (debug) printf("facet_listing is chosen.\n");
     Conversion=FacetListing;
+    return;
+  }
+  if (line== "facet_listing_external" && Conversion != LPmax && Conversion != FacetListing) {
+    if (debug) printf("facet_listing_external is chosen.\n");
+    Conversion=FacetListingExternal;
+    return;
+  }
+  if (line== "vertex_listing" && Conversion != LPmax && Conversion != VertexListing) {
+    if (debug) printf("vertex_listing is chosen.\n");
+    Conversion=VertexListing;
+    return;
+  }
+  if (line== "vertex_listing_external" && Conversion != LPmax && Conversion != VertexListingExternal) {
+    if (debug) printf("vertex_listing_external is chosen.\n");
+    Conversion=VertexListingExternal;
     return;
   }
   if (line== "tope_listing" && Conversion != LPmax && Conversion != LPmin) {
@@ -408,9 +551,9 @@ void ProcessCommandLine(ifstream &f, string line)
     ShowSignTableauOn=True;
     return;
   }
-  if (line== "row_decomp" && !RowDecomposition) {
+  if (line== "row_decomposition" && SpecialConversion!=RowDecomposition) {
     if (DynamicWriteOn) printf("Row decomposition is chosen.\n");
-    RowDecomposition=True;
+    SpecialConversion=RowDecomposition;
     return;
   }
 }
@@ -429,7 +572,7 @@ void WriteRayRecord(ostream &f, RayRecord *RR)
   else {
     scaler = FABS(RR->Ray[0]);
     if (scaler > zero) {
-      if (RR->Ray[0] > 0) {
+      if (RR->Ray[0] > zero) {
         if (Conversion == IneToExt) {
 	  (f) << " " << 1;
 	  for (j = 1; j < nn; j++)
@@ -513,9 +656,9 @@ void WriteAmatrix(ostream &f, Amatrix A, long rowmax, long colmax,
 
   (f) << "begin\n";
   if (ineq==ZeroRHS)
-    (f) << "  " << rowmax << "  " << colmax+1 <<  "  " << InputNumberString << "\n";
+    (f) << "  " << rowmax << "  " << colmax+1 <<  "  " << OutputNumberString << "\n";
   else
-    (f) << "  " << rowmax << "  " << colmax  << "  " << InputNumberString << "\n";
+    (f) << "  " << rowmax << "  " << colmax  << "  " << OutputNumberString << "\n";
   for (i=1; i <= rowmax; i++) {
     if (ineq==ZeroRHS)
       WriteNumber(f, 0);  /* if RHS==0, the column is not explicitely stored */
@@ -546,6 +689,7 @@ void WriteNumber(ostream &f, myTYPE x)
     (f) << " " << ix;
   } else {
     (f).setf(ios::scientific,ios::floatfield);
+    (f).precision(8);
     (f) << " " << x;
   }
 #else
@@ -723,7 +867,7 @@ void WriteIncidence(ostream &f, RayRecord *RR)
     (f) << " : " << zcar;
     break;
 
-  case IncSet:
+  case OutputIncidence: case IOIncidence: 
     if (mm - zcar >= zcar) {
       (f) << " " << zcar << " : ";
       set_fwrite(f, RR->ZeroSet);
@@ -820,12 +964,12 @@ void WriteRunningMode(ostream &f)
       (f) << "*HyperplaneOrder: LineShelling\n";
       break;
     }
-    if (NondegAssumed) {
-      (f) << "*Degeneracy preknowledge for computation: NondegenerateAssumed\n";
-    }
-    else {
-      (f) << "*Degeneracy preknowledge for computation: None (possible degeneracy)\n";
-    }
+  }
+  if (NondegAssumed) {
+    (f) << "*Degeneracy preknowledge for computation: NondegenerateAssumed\n";
+  }
+  else {
+    (f) << "*Degeneracy preknowledge for computation: None (possible degeneracy)\n";
   }
   switch (Conversion) {
     case ExtToIne:
@@ -848,12 +992,60 @@ void WriteRunningMode(ostream &f)
       (f) << "*Facet listing is chosen.\n";
       break;
 
+    case VertexListing:
+      (f) << "*Vertex listing is chosen.\n";
+      break;
+
+    case FacetListingExternal:
+      (f) << "*Facet listing external is chosen.\n";
+      break;
+
+    case VertexListingExternal:
+      (f) << "*Vertex listing external is chosen.\n";
+      break;
+
     case TopeListing:
       (f) << "*Tope listing is chosen.\n";
       break;
 
     case Projection:
       (f) << "*Preprojection is chosen.\n";
+      break;
+  
+    default: break;
+  }
+  switch (AdjacencyOutput) {
+    case IOAdjacency:
+      (f) <<  "*Output adjacency file is requested.\n";
+      (f) <<  "*Input adjacency file is requested.\n";
+      break;
+    
+    case InputAdjacency:
+      (f) <<  "*Input adjacency file is requested.\n";
+      break;
+
+    case OutputAdjacency:
+      (f) <<  "*Output adjacency file is requested.\n";
+      break;
+
+    default: break;
+  }
+  switch (IncidenceOutput) {
+    case IOIncidence:
+      (f) <<  "*Output incidence file is requested\n";
+      (f) <<  "*Input incidence file is requested.\n";
+      break;
+    
+    case InputIncidence:
+      (f) <<  "*Input incidence file is requested.\n";
+      break;
+
+    case OutputIncidence:
+      (f) <<  "*Output incidence file is requested.\n";
+      break;
+
+    case IncCardinality:
+      (f) <<  "*Incidence cardinality output is requested.\n";
       break;
   
     default: break;
@@ -941,12 +1133,60 @@ void WriteRunningMode2(ostream &f)
       (f) << "facet_listing\n";
       break;
 
+    case VertexListing:
+      (f) << "vertex_listing\n";
+      break;
+
+    case FacetListingExternal:
+      (f) << "facet_listing_external\n";
+      break;
+
+    case VertexListingExternal:
+      (f) << "vertex_listing_external\n";
+      break;
+
     case TopeListing:
       (f) << "tope_listing\n";
       break;
 
     case Projection:
       (f) <<  "*Preprojection is chosen.\n";
+      break;
+  
+    default: break;
+  }
+  switch (AdjacencyOutput) {
+    case IOAdjacency:
+      (f) <<  "adjacency\n";
+      (f) <<  "input_adjacency\n";
+      break;
+    
+    case InputAdjacency:
+      (f) <<  "input_adjacency\n";
+      break;
+
+    case OutputAdjacency:
+      (f) <<  "adjacency\n";
+      break;
+
+    default: break;
+  }
+  switch (IncidenceOutput) {
+    case IOIncidence:
+      (f) <<  "incidence\n";
+      (f) <<  "input_incidence\n";
+      break;
+    
+    case InputIncidence:
+      (f) <<  "input_incidence\n";
+      break;
+
+    case OutputIncidence:
+      (f) <<  "incidence\n";
+      break;
+
+    case IncCardinality:
+      (f) <<  "#incidence\n";
       break;
   
     default: break;
@@ -1005,7 +1245,7 @@ boolean InputAdjacentQ(Aincidence Aicd,
   boolean adj=True;
   rowrange i;
   static set_type common;
-  static lastRayCount=0;
+  static long lastRayCount=0;
 
   if (lastRayCount!=RayCount){
     if (lastRayCount >0) set_free(&common);
@@ -1148,18 +1388,106 @@ void WriteInputAdjacencyFile(ostream &f)
   } /* end of i */
   (f) << "end\n";
 
-// Input Incidence information won't be output if the following lines
-// are commented out 
-//  (f) << "\n*Incidences of input and output (dual of incidence information)\n";
-//  (f) << "*After <begin> three numbers are m1, m and output_size,\n";
-//  (f) << "*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).\n";
-//  (f) << "begin\n";
-//  (f) << "  " << mm << "  " << minput << "  " << RayCount << "\n";
-//  for (i=1; i<= mm ; i++) {
-//    WriteInputIncidence(f, Aicd, i);
-//  }
-//  (f) << "end\n";
-// up to here.
+_L99:;
+  for(i=1; i<=mm; i++) set_free(&(Aicd[i-1]));  
+}
+
+void WriteInputIncidenceFile(ostream &f)
+{
+  RayRecord *RayPtr1, *RayPtr2;
+  rowrange i,k, r1, r2, elem;
+  colrange j;
+  long pos1, pos2, degree, scard;
+  boolean adj, redundant;
+  node *headnode, *tailnode, *newnode, *prevnode;
+  Aincidence Aicd;
+  rowset Ared;  /* redundant inequality set */
+  rowset Adom;  /* dominant inequality set */
+
+  WriteProgramDescription(f);
+  (f) <<  "*cdd input file : " << inputfile << " (" << minput << " x " << ninput << ")\n";
+  (f) <<  "*cdd output file: " << outputfile << "\n";
+
+  switch (Conversion) {
+  case IneToExt:
+    (f) << "*Incidence of input (=inequalities/facets) w.r.t. output (=vertices/rays).\n";
+    break;
+
+  case ExtToIne:
+    (f) << "**Incidence of input (=vertices/rays) w.r.t. output (=inequalities/facets).\n";
+    break;
+
+  default:
+    break;
+  }
+
+  for(i=1; i<=mm; i++) set_initialize(&(Aicd[i-1]),RayCount); 
+  set_initialize(&Ared, mm); 
+  set_initialize(&Adom, mm); 
+  headnode=NULL; tailnode=NULL;
+
+  if (RayCount==0){
+    goto _L99;
+  }
+  LastRay->Next=NULL;
+  for (RayPtr1=FirstRay, pos1=1;RayPtr1 != NULL; RayPtr1 = RayPtr1->Next, pos1++){
+    scard=set_card(RayPtr1->ZeroSet);
+    elem = 0; i = 0;
+    while (elem < scard && i < mm){
+      i++;
+      if (set_member(i,RayPtr1->ZeroSet)) {
+        set_addelem(Aicd[i-1],pos1);
+        elem++;
+      }
+    }
+  }
+  for (i=1; i<=mm; i++){
+    if (set_card(Aicd[i-1])==RayCount){
+      f << "*row " << i << " is dominating.\n";
+      set_addelem(Adom, i);
+    }  
+  }
+  for (i=mm; i>=1; i--){
+    if (set_card(Aicd[i-1])==0){
+      redundant=True;
+      f << "*row " << i << " is redundant;dominated by all others.\n";
+      set_addelem(Ared, i);
+    }else {
+      redundant=False;
+      for (k=1; k<=mm; k++) {
+        if (k!=i && !set_member(k, Ared)  && !set_member(k, Adom) && 
+            set_subset(Aicd[i-1], Aicd[k-1])){
+          if (!redundant){
+            f << "*row " << i << " is redundant;dominated by:"; 
+            redundant=True;
+          }
+          f << " " << k;
+          set_addelem(Ared, i);
+        }
+      }
+      if (redundant){
+        f << "\n";
+      }
+    }
+  }
+  (f) << "begin\n";
+  (f) << "  " << minput << "  " << RayCount;
+  switch (Conversion) {
+  case IneToExt:
+    (f) << "  " << RayCount << "\n";
+    break;
+
+  case ExtToIne:
+    (f) << "  " << RayCount+1 << "\n";
+    break;
+
+  default:
+    break;
+  }
+  for (i=1; i<= mm ; i++) {
+    WriteInputIncidence(f, Aicd, i);
+  }
+  (f) << "end\n";
 
 _L99:;
   for(i=1; i<=mm; i++) set_free(&(Aicd[i-1]));  
@@ -1169,7 +1497,7 @@ void WriteAdjacencyFile(ostream &f)
 {
   RayRecord *RayPtr1, *RayPtr2;
   long pos1, pos2, degree;
-  boolean adj;
+  boolean adj,localdebug=False;
   node *headnode, *tailnode, *newnode, *prevnode;
 
   WriteProgramDescription(f);
@@ -1189,6 +1517,7 @@ void WriteAdjacencyFile(ostream &f)
   (f) <<  "*cdd input file : " << inputfile << " (" << minput << " x " << ninput << ")\n";
   (f) <<  "*cdd output file: " << outputfile << "\n";
   (f) << "begin\n";
+  if (localdebug) cout << "  " << RayCount << "\n";
   (f) << "  " << RayCount << "\n";
   if (RayCount==0){
     goto _L99;
@@ -1218,11 +1547,14 @@ void WriteAdjacencyFile(ostream &f)
       }
     }
     (f) << " " << pos1 << " " << degree << " :";
+    if (localdebug) cout << " " << pos1 << " " << degree << " :";
     for (newnode=headnode; newnode!=NULL; newnode=newnode->next, free(prevnode)){
       prevnode=newnode;
       (f) << " " << newnode->key;
+      if (localdebug) cout << " " << newnode->key;
     }
     (f) << "\n";
+    if (localdebug) cout << "\n";
   }
 _L99:;
   (f) << "end\n";
@@ -1250,8 +1582,6 @@ void WriteIncidenceFile(ostream &f)
   }
   (f) << "*cdd input file : " << inputfile << "  (" << minput << " x " << ninput << ")\n";
   (f) << "*cdd output file: " << outputfile << "\n";
-  (f) << "*After <begin>, three numbers are output_size, m and m1,\n";
-  (f) << "*where m1 is m+1 (for vertex/ray enumeration) or m (for convex hull).\n";
   (f) << "begin\n";
   (f) << "  " << FeasibleRayCount << "  " << minput << "  " << mm << "\n";
   TempPtr = FirstRay;
@@ -1534,7 +1864,7 @@ void WriteLPResult(ostream &f, LPStatusType LPS, myTYPE optval,
   if (Conversion==LPmax||Conversion==LPmin){
     (f) << "*Objective function is\n";  
     for (j=0; j<nn; j++){
-      if (j>0 && AA[OBJrow-1][j]>=0 ) (f) << " +";
+      if (j>0 && AA[OBJrow-1][j]>=zero ) (f) << " +";
       if (j>0 && (j % 5) == 0) (f) << "\n";
       WriteNumber(f, AA[OBJrow-1][j]);
       if (j>0) (f) << " X[" << j << "]";
@@ -1610,10 +1940,12 @@ void WriteSolvedProblem(ostream &f)
   WriteRunningMode2(f);
 }
 
+
 void AmatrixInput(boolean *successful)
 {
   long i,j;
-  myTYPE value=0;
+  myRational rvalue=0;
+  myTYPE value=0;    // modified on 1996-02-18 
   long value1,value2;
   boolean found=False,decided=False,fileopened, localdebug=False;
   string numbtype, stemp; 
@@ -1642,13 +1974,22 @@ void AmatrixInput(boolean *successful)
     } 
     Inequality=ZeroRHS;
     for (i=1; i<=minput && !decided; i++) {
-      reading >> value;
+      if (InputNumberString=="rational" && OutputNumberString=="real"){
+        reading >> rvalue;
+        value=myTYPE(rvalue);
+      } else {
+        reading >> value;
+      }
       if (FABS(value) > zero) {
         Inequality = NonzeroRHS;
         decided=True;
       }
       for (j=2; j<=ninput; j++) {
-        reading >> value;
+        if (InputNumberString=="rational" && OutputNumberString=="real"){
+          reading >> rvalue;
+        } else {
+          reading >> value;
+        }
       }
       if (localdebug) printf("remaining data to be skipped:");
       while (reading.get(ch) && ch != '\n') {
@@ -1702,13 +2043,23 @@ void AmatrixInput(boolean *successful)
     for (i = 1; i <= minput; i++) {
       AA[i-1]=new myTYPE[ninput];
       for (j = 1; j <= ninput; j++) {
-        reading >> value;
+        if (InputNumberString=="rational" && OutputNumberString=="real"){
+          reading >> rvalue;
+          value=myTYPE(rvalue);
+        } else {
+          reading >> value;
+        }
         if (Inequality==NonzeroRHS) 
       	  AA[i-1][j - 1] = value;
         else if (j>=2) {
           AA[i-1][j - 2] = value;
 	}
-	if (debug) cout << "a(" << i << "," << j << ") = " << value << "\n";
+	if (debug){
+           if (InputNumberString=="rational" && OutputNumberString=="real")
+             cout << "a(" << i << "," << j << ") = " << value << " ("<< rvalue << ")\n";
+           else
+             cout << "a(" << i << "," << j << ") = " << value  << "\n";
+         }
       }  /*of j*/
       if (debug) printf("comments to be skipped:");
       while (reading.get(ch) && ch != '\n') {
@@ -1818,6 +2169,66 @@ void WriteRowEquivalence(ostream &f, long classno, rowindex rowequiv)
       f << "\n";
     } 
   }
+}
+
+void ReadExtFile(ifstream &f)
+{
+  long i,j,k;
+  myRational rvalue=0;
+  myTYPE value=0;
+  myRational mvalue=0;
+  long mray,nray;
+  string numbtype, command;
+  boolean localdebug=False,found;
+  myTYPE* vec;
+  
+  vec = new myTYPE[mm];
+  AddArtificialRay();
+  if (!f.is_open()) {
+    Error=ImproperInputFormat;
+    goto _L99;
+  };
+  found=False;
+  while (!found)
+  {
+    if (f.eof()) {
+     Error=ImproperInputFormat;
+     goto _L99;
+    }
+    else {
+      f >> command;
+      if (strncmp(command, "begin", 5)==0) {
+        found=True;
+      }
+    }
+  }
+  f >> mray;
+  f >> nray;
+  f >> numbtype;
+  if (DynamicWriteOn){ 
+    cout << "ext object size =" << mray << "x" <<nray << "\n";
+    cout << "Number Type = " << numbtype << "\n";
+  }
+  for (k=1; k<=mray;k++){
+    for (j=1; j<=nray; j++){
+        if (OutputNumberString=="real" && numbtype=="rational"){
+          f >> rvalue;
+          value=myTYPE(rvalue);
+        } else {
+          f >> value;
+        }
+      if (Inequality==NonzeroRHS) {
+        vec[j - 1] = value;
+      } else if (j>=2) {
+        vec[j - 2] = value;
+      }
+      if (localdebug) WriteNumber(cout, value);
+    }
+    if (localdebug) printf("\n");
+    if (DynamicRayWriteOn) cout << "#" << k << ":";
+    AddRay(vec);
+  }
+_L99:;
 }
 
 /* end of cddio.c */
