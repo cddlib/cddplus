@@ -1,26 +1,26 @@
 # Makefile for cdd+ compilation with gcc-3.*.
 
 # You must have GMP installed and use GNU g++ compiler of version 3.* .
-CC = gcc
+CC = g++
 #CC = /usr/local/bin/gcc
 #CC = /bin/cc
 
 # Location of gnu c++ library.  
-LIBDIR = /usr/lib 
-#LIBDIR = /usr/local/lib 
+#LIBDIR = /usr/lib 
+LIBDIR = /usr/local/lib 
 
 # Location of gnu gmp library libgmp.a  
-GMPLIBDIR = /usr/lib 
-#GMPLIBDIR = /usr/local/lib 
+#GMPLIBDIR = /usr/lib 
+GMPLIBDIR = /usr/local/lib 
 
 # Location of gnu gmp-library include file gmp.h 
-GMPINCLUDEDIR = /usr/include
-#GMPINCLUDEDIR = /usr/local/include
+#GMPINCLUDEDIR = /usr/include
+GMPINCLUDEDIR = /usr/local/include
 
 # Compiler optimization/debug options
 #OPTFLAGS = -g -static -O
 #OPTFLAGS = -g -static -pg -O
-OPTFLAGS = -static -O3
+OPTFLAGS = -O3
 
 ########## You shouldn't have to change anything after this point ##########
 

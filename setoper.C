@@ -2,7 +2,7 @@
  A set operation library 
  created by Komei Fukuda, April 3, 1995
  Last modified, June 19, 1996
- Modified for newer C++ standard, April 20, 2003 
+ Modified for newer C++ standard, October 21, 2007 
 */
 
 #include <iostream>
@@ -54,7 +54,7 @@ void set_initialize(set_type *setp, long len)
 	long i,forlim1;
 	
 	forlim1=set_blocks(len);
-	(*setp)=new (unsigned long)[forlim1];
+	(*setp)=new unsigned long[forlim1];
 	(*setp)[0]=(unsigned long) len;  /* size of the ground set */
 	// cout << " size of the set is set to " << (*setp)[0] << "\n";
 	for (i=1; i<forlim1; i++)
