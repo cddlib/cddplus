@@ -17,6 +17,7 @@
 #define _POLYMAKE_GMP_RATIONAL_H "$Project: polymake $$Id: Rational.h 7565 2007-01-16 16:29:43Z gawrilow $"
 
 #include <Integer.h>
+#include <string.h>
 
 #if __GNU_MP_VERSION < 4
 #define _tmp_little_Integer(x) \
@@ -420,7 +421,7 @@ public:
        Numerator and denominator are expected delimited by `/'.
        Omitted denominator assumed equal to 1.
    */
-   Rational& set(const char *s) throw(gmp_error);
+   Rational& set(const char *s);
 
    Rational& operator= (const Rational& b)
    {
@@ -1208,13 +1209,19 @@ struct numeric_limits<Rational> : numeric_limits<Integer> {
 
 } // end namespace std
 
-namespace std_ext {
+namespace std {
 
 template <> struct hash<MP_RAT> : hash<MP_INT> {
 protected:
+   size_t __do(mpz_srcptr a) const {
+      size_t result=0;
+      for (int i=0, n=mpz_size(a); i<n; ++i)
+         (result <<= 1) ^= mpz_getlimbn(a, i);
+      return result;
+   }
    size_t _do(mpq_srcptr a) const
    {
-      return hash<MP_INT>::_do(mpq_numref(a)) - hash<MP_INT>::_do(mpq_denref(a));
+      return __do(mpq_numref(a)) - __do(mpq_denref(a));
    }
 public:
    size_t operator() (const MP_RAT& a) const { return _do(&a); }

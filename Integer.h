@@ -20,9 +20,9 @@
 #include <string>
 #include <stdexcept>
 #include <cstdlib>
-#include <gmp_init.h>
 #include <cctype>
 #include <limits>
+#include <gmp.h>
 
 class Integer; class Rational;
 
@@ -178,7 +178,7 @@ public:
    }
 
    /// Recognizes automatically number base 10, 8, or 16.
-   Integer& set(const char *s) throw(gmp_error)
+   Integer& set(const char *s)
    {
       if (mpz_set_str(rep, s, 0) < 0)
 	 throw gmp_error("Integer: syntax error in string");
@@ -194,14 +194,14 @@ public:
 
    operator double() const { return mpz_get_d(rep); }
 
-   operator long() const throw(gmp_error)
+   operator long() const
    {
       if (!mpz_fits_slong_p(rep))
 	 throw gmp_error("Integer: value too big");
       return mpz_get_si(rep);
    }
 
-   operator int() const throw(gmp_error)
+   operator int() const
    {
       if (!mpz_fits_sint_p(rep))
 	 throw gmp_error("Integer: value too big");
@@ -783,9 +783,15 @@ struct numeric_limits<Integer> : numeric_limits<long> {
 
 } // end namespace std
 
-namespace std_ext {
+namespace std {
 
 template <> struct hash<Integer> : hash<MP_INT> {
+   size_t _do(mpz_srcptr a) const {
+      size_t result=0;
+      for (int i=0, n=mpz_size(a); i<n; ++i)
+         (result <<= 1) ^= mpz_getlimbn(a, i);
+      return result;
+   }
    size_t operator() (const Integer& a) const { return _do(a.get_rep()); }
 };
 
